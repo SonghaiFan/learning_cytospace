@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - 布局控制</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>布局控制示例</h1>
+      <button onclick="changeLayout('grid')">网格布局</button>
+      <button onclick="changeLayout('circle')">圆形布局</button>
+      <button onclick="changeLayout('concentric')">同心圆布局</button>
+      <button onclick="changeLayout('breadthfirst')">层次布局</button>
+      <button onclick="changeLayout('random')">随机布局</button>
+    </div>
+    <div id="cy"></div>
+    <script>
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // 创建一个示例图形
+          { data: { id: "a" } },
+          { data: { id: "b" } },
+          { data: { id: "c" } },
+          { data: { id: "d" } },
+          { data: { id: "e" } },
+          // 边的定义
+          { data: { source: "a", target: "b" } },
+          { data: { source: "b", target: "c" } },
+          { data: { source: "c", target: "d" } },
+          { data: { source: "d", target: "e" } },
+          { data: { source: "e", target: "a" } },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(id)",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+            },
+          },
+        ],
+      });
+
+      // 切换布局函数
+      function changeLayout(name) {
+        const layout = cy.layout({
+          name: name, // 布局算法名称
+
+          // 通用布局选项
+          animate: true, // 是否使用动画
+          animationDuration: 500, // 动画持续时间
+          padding: 30, // 布局边距
+
+          // 特定布局的选项
+          // grid 布局选项
+          rows: undefined, // 自动计算行数
+          cols: undefined, // 自动计算列数
+
+          // circle 布局选项
+          radius: undefined, // 自动计算半径
+
+          // concentric 布局选项
+          concentric: function (node) {
+            // 根据节点的度来决定同心圆的层级
+            return node.degree();
+          },
+          levelWidth: function (nodes) {
+            // 每层节点的间距
+            return 2;
+          },
+
+          // breadthfirst（层次）布局选项
+          directed: true, // 是否考虑边的方向
+          roots: undefined, // 自动选择根节点
+
+          // 布局开始和结束的回调
+          ready: function () {
+            // 布局准备就绪
+            console.log("Layout ready");
+          },
+          stop: function () {
+            // 布局完成
+            console.log("Layout stopped");
+          },
+        });
+
+        // 运行布局
+        layout.run();
+      }
+
+      // 初始布局
+      changeLayout("grid");
+    </script>
+  </body>
+</html>

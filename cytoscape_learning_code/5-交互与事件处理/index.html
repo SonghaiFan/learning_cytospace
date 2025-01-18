@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - 工具提示</title>
+    <!-- 加载 Cytoscape.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <!-- 加载 Popper.js -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <!-- 加载 Cytoscape Popper 扩展 -->
+    <script src="https://unpkg.com/cytoscape-popper@2.0.0/cytoscape-popper.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+      /* 单选框组样式 */
+      .radio-group {
+        display: inline-block;
+        margin: 5px;
+      }
+      .radio-group label {
+        display: inline-block;
+        padding: 5px 10px;
+        margin: 2px;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .radio-group input[type="radio"] {
+        display: none;
+      }
+      .radio-group input[type="radio"]:checked + label {
+        background: #666;
+        color: white;
+        border-color: #666;
+      }
+      /* 工具提示样式 */
+      .tooltip {
+        background-color: #000;
+        color: #fff;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 14px;
+        max-width: 200px;
+      }
+      /* 弹出框样式 */
+      .popper-div {
+        position: relative;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        padding: 12px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .popper-div .close-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 20px;
+        height: 20px;
+        border: none;
+        background: none;
+        cursor: pointer;
+        padding: 0;
+        font-size: 16px;
+        line-height: 1;
+        color: #666;
+        opacity: 0.7;
+      }
+      .popper-div .close-btn:hover {
+        opacity: 1;
+      }
+      .popper-div input {
+        margin: 4px 0;
+        padding: 4px;
+      }
+      .popper-div button {
+        margin: 4px;
+        padding: 4px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>工具提示示例</h1>
+      <div class="control-group">
+        <h3>工具提示类型</h3>
+        <div class="radio-group">
+          <input type="radio" name="tooltip" id="none" value="none" checked />
+          <label for="none">关闭提示</label>
+
+          <input type="radio" name="tooltip" id="tooltip" value="tooltip" />
+          <label for="tooltip" title="显示悬停提示">显示提示</label>
+
+          <input
+            type="radio"
+            name="tooltip"
+            id="interactive"
+            value="interactive"
+          />
+          <label for="interactive" title="显示可交互的提示">交互提示</label>
+        </div>
+      </div>
+
+      <!-- 提示说明 -->
+      <div class="control-group">
+        <p id="tooltip-tip">当前模式: 关闭提示</p>
+        <p>提示: 将鼠标悬停在节点或边上查看效果</p>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <script>
+      let currentTooltipMode = "none";
+      const popperInstances = new Map();
+
+      // 移除所有弹出框
+      function removeAllPopovers() {
+        popperInstances.forEach((instance, key) => {
+          if (instance.state.elements.popper) {
+            instance.state.elements.popper.remove();
+            instance.destroy();
+          }
+        });
+        popperInstances.clear();
+      }
+
+      // 设置工具提示模式
+      function setTooltipMode(mode) {
+        // 清理现有提示
+        removeAllPopovers();
+        currentTooltipMode = mode;
+
+        // 更新提示文本
+        const tipText = {
+          none: "关闭提示 - 无任何提示显示",
+          tooltip: "显示提示 - 悬停时显示详细信息",
+          interactive: "交互提示 - 显示可操作的信息面板",
+        };
+        document.getElementById(
+          "tooltip-tip"
+        ).textContent = `当前模式: ${tipText[mode]}`;
+      }
+
+      // 监听单选框变化
+      document.querySelectorAll('input[name="tooltip"]').forEach((radio) => {
+        radio.addEventListener("change", function () {
+          if (this.checked) {
+            setTooltipMode(this.value);
+          }
+        });
+      });
+
+      // 初始化 Cytoscape 实例
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // 节点
+          {
+            data: {
+              id: "a",
+              label: "节点 A",
+              info: "这是一个重要节点",
+              weight: 75,
+            },
+          },
+          {
+            data: {
+              id: "b",
+              label: "节点 B",
+              info: "这是一个普通节点",
+              weight: 50,
+            },
+          },
+          {
+            data: {
+              id: "c",
+              label: "节点 C",
+              info: "这是一个特殊节点",
+              weight: 85,
+            },
+          },
+          // 边
+          {
+            data: {
+              id: "ab",
+              source: "a",
+              target: "b",
+              relationship: "关联",
+              strength: 0.8,
+            },
+          },
+          {
+            data: {
+              id: "bc",
+              source: "b",
+              target: "c",
+              relationship: "依赖",
+              strength: 0.6,
+            },
+          },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+              "curve-style": "bezier",
+            },
+          },
+        ],
+        layout: { name: "grid" },
+      });
+
+      // 创建工具提示
+      function makeTooltip(target, text) {
+        // 根据不同模式创建不同类型的提示
+        switch (currentTooltipMode) {
+          case "tooltip":
+            // 富文本提示模式:
+            // 1. 显示更多详细信息
+            // 2. 支持 HTML 格式化（粗体、换行等）
+            // 3. 可以包含多个属性信息
+            return target.popper({
+              content: () => {
+                const div = document.createElement("div");
+                div.className = "tooltip";
+                div.innerHTML = text;
+                document.body.appendChild(div);
+                return div;
+              },
+              popper: {
+                placement: "top",
+                modifiers: [
+                  {
+                    name: "offset",
+                    options: { offset: [0, 10] },
+                  },
+                ],
+              },
+            });
+          default:
+            return null;
+        }
+      }
+
+      // 创建节点信息弹出框
+      function makeNodePopper(node) {
+        return node.popper({
+          content: () => {
+            const div = document.createElement("div");
+            div.className = "popper-div";
+            div.innerHTML = `
+              <button class="close-btn" onclick="closePopper('node-${node.id()}')">&times;</button>
+              <h3>节点信息</h3>
+              <p>ID: ${node.id()}</p>
+              <p>标签: <input type="text" value="${node.data(
+                "label"
+              )}" onchange="updateNodeLabel('${node.id()}', this.value)"></p>
+              <p>权重: <input type="number" value="${node.data(
+                "weight"
+              )}" onchange="updateNodeWeight('${node.id()}', this.value)"></p>
+              <p>说明: <input type="text" value="${node.data(
+                "info"
+              )}" onchange="updateNodeInfo('${node.id()}', this.value)"></p>
+            `;
+            document.body.appendChild(div);
+            return div;
+          },
+          popper: {
+            placement: "right",
+          },
+        });
+      }
+
+      // 创建边信息弹出框
+      function makeEdgePopper(edge) {
+        return edge.popper({
+          content: () => {
+            const div = document.createElement("div");
+            div.className = "popper-div";
+            div.innerHTML = `
+              <button class="close-btn" onclick="closePopper('edge-${edge.id()}')">&times;</button>
+              <h3>边信息</h3>
+              <p>从 ${edge.source().data("label")} 到 ${edge
+              .target()
+              .data("label")}</p>
+              <p>关系: <input type="text" value="${edge.data(
+                "relationship"
+              )}" onchange="updateEdgeRelationship('${edge.id()}', this.value)"></p>
+              <p>强度: <input type="number" step="0.1" min="0" max="1" value="${edge.data(
+                "strength"
+              )}" onchange="updateEdgeStrength('${edge.id()}', this.value)"></p>
+            `;
+            document.body.appendChild(div);
+            return div;
+          },
+          popper: {
+            placement: "right",
+          },
+        });
+      }
+
+      // 更新节点属性
+      function updateNodeLabel(nodeId, value) {
+        cy.$id(nodeId).data("label", value);
+      }
+
+      function updateNodeWeight(nodeId, value) {
+        cy.$id(nodeId).data("weight", parseInt(value));
+      }
+
+      function updateNodeInfo(nodeId, value) {
+        cy.$id(nodeId).data("info", value);
+      }
+
+      // 更新边属性
+      function updateEdgeRelationship(edgeId, value) {
+        cy.$id(edgeId).data("relationship", value);
+      }
+
+      function updateEdgeStrength(edgeId, value) {
+        cy.$id(edgeId).data("strength", parseFloat(value));
+      }
+
+      // 事件处理
+      cy.on("mouseover", "node", function (evt) {
+        if (currentTooltipMode !== "none") {
+          const node = evt.target;
+          // 简单提示只显示标签
+          // 富文本提示显示详细信息和权重
+          const info = node.data("info");
+          const weight = node.data("weight");
+          const tooltip = makeTooltip(node, `${info}<br>权重: ${weight}`);
+          popperInstances.set(`tooltip-${node.id()}`, tooltip);
+        }
+      });
+
+      // 添加边的悬停事件
+      cy.on("mouseover", "edge", function (evt) {
+        if (currentTooltipMode !== "none") {
+          const edge = evt.target;
+          const relationship = edge.data("relationship");
+          const strength = edge.data("strength");
+          const source = edge.source().data("label");
+          const target = edge.target().data("label");
+
+          const tooltipContent = `
+            <div>
+              <strong>${source}</strong> → <strong>${target}</strong><br>
+              关系: ${relationship}<br>
+              强度: ${strength}
+            </div>
+          `;
+
+          const tooltip = makeTooltip(edge, tooltipContent);
+          popperInstances.set(`tooltip-${edge.id()}`, tooltip);
+        }
+      });
+
+      cy.on("mouseout", "node", function (evt) {
+        if (currentTooltipMode !== "none") {
+          const node = evt.target;
+          const instance = popperInstances.get(`tooltip-${node.id()}`);
+          if (instance && instance.state.elements.popper) {
+            instance.state.elements.popper.remove();
+            instance.destroy();
+          }
+          popperInstances.delete(`tooltip-${node.id()}`);
+        }
+      });
+
+      // 添加边的移出事件
+      cy.on("mouseout", "edge", function (evt) {
+        if (currentTooltipMode !== "none") {
+          const edge = evt.target;
+          const instance = popperInstances.get(`tooltip-${edge.id()}`);
+          if (instance && instance.state.elements.popper) {
+            instance.state.elements.popper.remove();
+            instance.destroy();
+          }
+          popperInstances.delete(`tooltip-${edge.id()}`);
+        }
+      });
+
+      cy.on("tap", "node", function (evt) {
+        if (currentTooltipMode === "interactive") {
+          const node = evt.target;
+          const key = `node-${node.id()}`;
+          if (popperInstances.has(key)) {
+            const instance = popperInstances.get(key);
+            instance.state.elements.popper.remove();
+            instance.destroy();
+            popperInstances.delete(key);
+          } else {
+            const popper = makeNodePopper(node);
+            popperInstances.set(key, popper);
+          }
+        }
+      });
+
+      cy.on("tap", "edge", function (evt) {
+        if (currentTooltipMode === "interactive") {
+          const edge = evt.target;
+          const key = `edge-${edge.id()}`;
+          if (popperInstances.has(key)) {
+            const instance = popperInstances.get(key);
+            instance.state.elements.popper.remove();
+            instance.destroy();
+            popperInstances.delete(key);
+          } else {
+            const popper = makeEdgePopper(edge);
+            popperInstances.set(key, popper);
+          }
+        }
+      });
+
+      // 关闭弹出框
+      function closePopper(key) {
+        if (popperInstances.has(key)) {
+          const instance = popperInstances.get(key);
+          instance.state.elements.popper.remove();
+          instance.destroy();
+          popperInstances.delete(key);
+        }
+      }
+
+      // 初始化工具提示模式
+      setTooltipMode("none");
+    </script>
+  </body>
+</html>

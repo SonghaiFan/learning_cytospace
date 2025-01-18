@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - 高级交互</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      .control-group {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+      }
+      .control-group h3 {
+        margin: 0 0 10px 0;
+      }
+      /* 交互控制按钮样式 */
+      .btn-group {
+        display: inline-block;
+        margin: 5px;
+      }
+      .btn-group button {
+        padding: 5px 10px;
+        margin: 2px;
+        background: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .btn-group button:hover {
+        background: #e5e5e5;
+      }
+      .btn-group button.active {
+        background: #666;
+        color: white;
+        border-color: #666;
+      }
+      /* 日志面板样式 */
+      #interaction-log {
+        width: 600px;
+        margin: 20px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .log-entry {
+        padding: 2px 5px;
+        border-bottom: 1px solid #eee;
+      }
+      .log-entry:first-child {
+        background: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>高级交互示例</h1>
+
+      <!-- 基础交互控制 -->
+      <div class="control-group">
+        <h3>多选模式</h3>
+        <div class="btn-group">
+          <button onclick="setSelectMode('single')" id="single-btn">
+            单选模式
+          </button>
+          <button onclick="setSelectMode('additive')" id="additive-btn">
+            点击多选
+          </button>
+          <button onclick="setSelectMode('box')" id="box-btn">框选模式</button>
+          <button onclick="clearSelection()" id="clear-btn">清除选择</button>
+        </div>
+      </div>
+
+      <!-- 选择提示 -->
+      <div class="control-group">
+        <p id="selection-tip">当前模式: 单选模式</p>
+        <p>提示: 框选模式下按住鼠标左键拖动可框选多个节点</p>
+      </div>
+    </div>
+
+    <div id="cy"></div>
+    <div id="interaction-log">
+      <strong>交互日志:</strong>
+      <div id="log-content"></div>
+    </div>
+
+    <script>
+      // 状态变量
+      let currentSelectMode = "single";
+
+      // 初始化 Cytoscape 实例
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // 节点
+          { data: { id: "a", label: "A" } },
+          { data: { id: "b", label: "B" } },
+          { data: { id: "c", label: "C" } },
+          { data: { id: "d", label: "D" } },
+          // 边
+          { data: { source: "a", target: "b" } },
+          { data: { source: "b", target: "c" } },
+          { data: { source: "c", target: "d" } },
+          { data: { source: "d", target: "a" } },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+              "curve-style": "bezier",
+              "transition-property": "line-color, width",
+              "transition-duration": "0.3s",
+            },
+          },
+          {
+            selector: ":selected",
+            style: {
+              "background-color": "#f62",
+              "line-color": "#f62",
+            },
+          },
+        ],
+        layout: { name: "grid" },
+        // 初始交互配置
+        userZoomingEnabled: true,
+        userPanningEnabled: true,
+        boxSelectionEnabled: false,
+        selectionType: "single",
+      });
+
+      // 记录交互日志
+      function logInteraction(text) {
+        const logContent = document.getElementById("log-content");
+        const entry = document.createElement("div");
+        entry.className = "log-entry";
+        entry.textContent = `${new Date().toLocaleTimeString()}: ${text}`;
+        logContent.insertBefore(entry, logContent.firstChild);
+      }
+
+      // 设置选择模式
+      function setSelectMode(mode) {
+        currentSelectMode = mode;
+
+        // 更新按钮状态
+        document
+          .getElementById("single-btn")
+          .classList.toggle("active", mode === "single");
+        document
+          .getElementById("additive-btn")
+          .classList.toggle("active", mode === "additive");
+        document
+          .getElementById("box-btn")
+          .classList.toggle("active", mode === "box");
+
+        // 更新 Cytoscape 配置
+        cy.boxSelectionEnabled(mode === "box");
+        cy.selectionType(mode === "single" ? "single" : "additive");
+
+        // 更新提示文本
+        const tipText = {
+          single: "单选模式 - 点击选择单个节点",
+          additive: "点击多选 - 点击可选择多个节点",
+          box: "框选模式 - 按住鼠标拖动可框选多个节点",
+        };
+        document.getElementById(
+          "selection-tip"
+        ).textContent = `当前模式: ${tipText[mode]}`;
+
+        logInteraction(`切换到${tipText[mode]}`);
+      }
+
+      // 清除选择
+      function clearSelection() {
+        cy.elements().unselect();
+        logInteraction("清除所有选择");
+      }
+
+      // 事件监听
+      cy.on("select", "node", function (evt) {
+        logInteraction(`选中节点: ${evt.target.data("label")}`);
+      });
+
+      cy.on("unselect", "node", function (evt) {
+        logInteraction(`取消选中节点: ${evt.target.data("label")}`);
+      });
+
+      // 初始化选择模式
+      setSelectMode("single");
+    </script>
+  </body>
+</html>

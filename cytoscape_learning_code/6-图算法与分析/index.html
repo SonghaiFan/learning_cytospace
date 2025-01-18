@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - 图算法教学演示</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-klay/cytoscape-klay.js"></script>
+    <style>
+      #cy {
+        width: 800px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .algorithm-group {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+      }
+      .algorithm-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .algorithm-description {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      #algorithm-result {
+        width: 600px;
+        margin: 20px auto;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      .complexity-info {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>图算法教学演示</h1>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">中心性度量</div>
+        <div class="algorithm-description">
+          探索节点在网络中的重要性和影响力
+        </div>
+        <button onclick="runPageRank()" title="计算节点的 PageRank 值">
+          PageRank分析
+        </button>
+        <button onclick="findBetweenness()" title="计算节点和边的中介中心性">
+          中介中心性
+        </button>
+        <button onclick="runDegreeCentrality()" title="计算节点的度中心性">
+          度中心性
+        </button>
+        <div class="complexity-info">
+          复杂度: PageRank O(E·k), 中介中心性 O(V·E), 度中心性 O(V)
+        </div>
+      </div>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">网络结构分析</div>
+        <div class="algorithm-description">识别网络中的关键结构和组件</div>
+        <button onclick="findBridges()" title="查找图中的桥接边">
+          桥接边分析
+        </button>
+        <button onclick="findArticulationPoints()" title="查找图中的关节点">
+          关节点分析
+        </button>
+        <button onclick="findClusters()" title="使用 k-means 算法进行聚类">
+          社区发现
+        </button>
+        <div class="complexity-info">
+          复杂度: 桥接边 O(V+E), 关节点 O(V+E), 聚类 O(V·k·i)
+        </div>
+      </div>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">路径分析</div>
+        <div class="algorithm-description">分析节点间的最短路径和连接性</div>
+        <button
+          onclick="findShortestPath()"
+          title="查找两个随机节点间的最短路径"
+        >
+          最短路径
+        </button>
+        <button onclick="resetHighlight()" title="清除高亮效果">
+          重置视图
+        </button>
+        <div class="complexity-info">
+          复杂度: 最短路径(Dijkstra) O((V+E)·log V)
+        </div>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div id="algorithm-result">
+      <strong>算法分析结果:</strong>
+      <div id="result-content"></div>
+    </div>
+    <script>
+      // 初始化 Cytoscape 实例
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // 节点
+          // 第一个社区
+          { data: { id: "a1", label: "A1" } },
+          { data: { id: "a2", label: "A2" } },
+          { data: { id: "a3", label: "A3" } },
+          // 第二个社区
+          { data: { id: "b1", label: "B1" } },
+          { data: { id: "b2", label: "B2" } },
+          { data: { id: "b3", label: "B3" } },
+          // 第三个社区
+          { data: { id: "c1", label: "C1" } },
+          { data: { id: "c2", label: "C2" } },
+          { data: { id: "c3", label: "C3" } },
+
+          // 边
+          // 第一个社区的内部连接
+          { data: { id: "a1a2", source: "a1", target: "a2", weight: 1 } },
+          { data: { id: "a2a3", source: "a2", target: "a3", weight: 1 } },
+          { data: { id: "a3a1", source: "a3", target: "a1", weight: 1 } },
+
+          // 第二个社区的内部连接
+          { data: { id: "b1b2", source: "b1", target: "b2", weight: 1 } },
+          { data: { id: "b2b3", source: "b2", target: "b3", weight: 1 } },
+          { data: { id: "b3b1", source: "b3", target: "b1", weight: 1 } },
+
+          // 第三个社区的内部连接
+          { data: { id: "c1c2", source: "c1", target: "c2", weight: 1 } },
+          { data: { id: "c2c3", source: "c2", target: "c3", weight: 1 } },
+          { data: { id: "c3c1", source: "c3", target: "c1", weight: 1 } },
+
+          // 桥接边（连接不同社区的关键边）
+          { data: { id: "a2b1", source: "a2", target: "b1", weight: 2 } }, // 桥接边1
+          { data: { id: "b2c1", source: "b2", target: "c1", weight: 2 } }, // 桥接边2
+        ],
+        style: [
+          // 基础节点样式
+          {
+            selector: "node",
+            style: {
+              // 基本外观
+              "background-color": "#666",
+              "border-width": 2,
+              "border-color": "#333",
+
+              // 尺寸
+              width: 30,
+              height: 30,
+
+              // 标签
+              label: "data(label)",
+              color: "#fff",
+              "font-size": "12px",
+              "text-valign": "center",
+              "text-halign": "center",
+              "text-outline-width": 2,
+              "text-outline-color": "#666",
+
+              // 动画过渡
+              "transition-property": "background-color, width, height",
+              "transition-duration": "0.3s",
+            },
+          },
+
+          // 基础边样式
+          {
+            selector: "edge",
+            style: {
+              // 基本外观
+              width: "data(weight)",
+              "line-color": "#999",
+              "curve-style": "bezier",
+
+              // 标签
+              label: "data(weight)",
+              "font-size": "10px",
+
+              // 动画过渡
+              "transition-property": "line-color, width",
+              "transition-duration": "0.3s",
+            },
+          },
+
+          // 高亮样式
+          {
+            selector: ".highlighted",
+            style: {
+              "background-color": "#e74c3c", // 节点高亮颜色
+              "line-color": "#e74c3c", // 边高亮颜色
+              "border-color": "#c0392b", // 节点边框高亮颜色
+            },
+          },
+
+          // 桥接边样式
+          {
+            selector: ".bridge",
+            style: {
+              "line-color": "#3498db",
+              "line-style": "dashed",
+              width: 4,
+              height: 4,
+            },
+          },
+
+          // 关节点样式
+          {
+            selector: ".articulation-point",
+            style: {
+              "background-color": "#2ecc71",
+              "border-width": 3,
+              "border-color": "#27ae60",
+              width: 35,
+              height: 35,
+            },
+          },
+
+          // 社区样式
+          {
+            selector: ".cluster-0",
+            style: {
+              "background-color": "#e74c3c", // 红色社区
+            },
+          },
+          {
+            selector: ".cluster-1",
+            style: {
+              "background-color": "#3498db", // 蓝色社区
+            },
+          },
+          {
+            selector: ".cluster-2",
+            style: {
+              "background-color": "#2ecc71", // 绿色社区
+            },
+          },
+        ],
+
+        // 使用更简单的布局
+        layout: {
+          name: "cose",
+          padding: 50,
+          nodeRepulsion: 4500,
+          idealEdgeLength: 80,
+          animate: true,
+          animationDuration: 500,
+          animationEasing: "ease-out",
+        },
+      });
+
+      // 显示算法结果
+      function showResult(text, complexity = "") {
+        let content = text;
+        if (complexity) {
+          content += `<br><br><em>算法复杂度: ${complexity}</em>`;
+        }
+        document.getElementById("result-content").innerHTML = content;
+      }
+
+      // 运行 PageRank
+      function runPageRank() {
+        resetHighlight();
+        const ranks = cy.elements().pageRank();
+        let result = "<strong>PageRank 分析结果:</strong><br><br>";
+        result +=
+          "PageRank算法通过分析节点间的连接关系来评估节点的重要性。<br><br>";
+
+        cy.nodes().forEach((node) => {
+          const rank = ranks.rank(node);
+          result += `节点 ${node.data("label")}: ${rank.toFixed(3)}<br>`;
+          node.style({
+            width: 20 + rank * 200,
+            height: 20 + rank * 200,
+          });
+        });
+        showResult(result, "O(E·k) 其中 k 为迭代次数");
+      }
+
+      // 新增：度中心性分析
+      function runDegreeCentrality() {
+        resetHighlight();
+        let result = "<strong>度中心性分析结果:</strong><br><br>";
+        result += "度中心性反映了节点的直接连接数量。<br><br>";
+
+        cy.nodes().forEach((node) => {
+          const degree = node.degree();
+          result += `节点 ${node.data("label")}: ${degree}<br>`;
+          if (degree > 3) {
+            node.addClass("highlighted");
+          }
+        });
+        showResult(result, "O(V)");
+      }
+
+      // 增强：最短路径分析
+      function findShortestPath() {
+        resetHighlight();
+        const nodes = cy.nodes().toArray();
+        const source = nodes[Math.floor(Math.random() * nodes.length)];
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+
+        if (source === target) {
+          return findShortestPath();
+        }
+
+        const dijkstra = cy.elements().dijkstra({
+          root: source,
+          directed: false,
+        });
+
+        const path = dijkstra.pathTo(target);
+        path.addClass("highlighted");
+
+        let result = "<strong>最短路径分析:</strong><br><br>";
+        result += `从节点 ${source.data("label")} 到节点 ${target.data(
+          "label"
+        )} 的最短路径:<br>`;
+        result += `路径长度: ${dijkstra.distanceTo(target).toFixed(2)}<br>`;
+        result += `经过节点: ${path
+          .nodes()
+          .map((n) => n.data("label"))
+          .join(" → ")}`;
+
+        showResult(result, "O((V+E)·log V)");
+      }
+
+      // 计算中介中心性
+      function findBetweenness() {
+        resetHighlight();
+        const bc = cy.elements().betweennessCentrality();
+        let result = "<strong>中介中心性分析结果:</strong><br><br>";
+        result += "中介中心性反映了节点作为网络中转站的重要程度。<br><br>";
+
+        cy.nodes().forEach((node) => {
+          const centrality = bc.betweenness(node);
+          result += `节点 ${node.data("label")}: ${centrality.toFixed(3)}<br>`;
+          if (centrality > 0.2) {
+            node.addClass("highlighted");
+          }
+        });
+        showResult(result, "O(V·E)");
+      }
+
+      // 聚类分析
+      function findClusters() {
+        resetHighlight();
+        // 使用 k-means 聚类
+        const k = 3; // 聚类数量
+        const positions = cy.nodes().map((node) => ({
+          id: node.id(),
+          x: node.position("x"),
+          y: node.position("y"),
+        }));
+
+        // 简单的 k-means 实现
+        const clusters = kMeans(positions, k);
+        let result = "聚类结果:<br>";
+        Object.keys(clusters).forEach((clusterId) => {
+          const nodes = clusters[clusterId];
+          result += `簇 ${clusterId}: ${nodes.join(", ")}<br>`;
+          nodes.forEach((nodeId) => {
+            cy.$id(nodeId).addClass(`cluster-${clusterId}`);
+          });
+        });
+        showResult(result);
+      }
+
+      // k-means 聚类算法
+      function kMeans(points, k) {
+        // 初始化中心点
+        let centers = points.slice(0, k).map((p) => ({ x: p.x, y: p.y }));
+        let clusters = {};
+        let changed = true;
+        let maxIterations = 10;
+
+        while (changed && maxIterations > 0) {
+          changed = false;
+          clusters = {};
+
+          // 分配点到最近的中心
+          points.forEach((point) => {
+            const closestCenter = findClosestCenter(point, centers);
+            if (!clusters[closestCenter]) clusters[closestCenter] = [];
+            clusters[closestCenter].push(point.id);
+          });
+
+          // 更新中心点
+          Object.keys(clusters).forEach((i) => {
+            const newCenter = calculateCenter(
+              clusters[i].map((id) => points.find((p) => p.id === id))
+            );
+            if (
+              Math.abs(newCenter.x - centers[i].x) > 0.1 ||
+              Math.abs(newCenter.y - centers[i].y) > 0.1
+            ) {
+              changed = true;
+            }
+            centers[i] = newCenter;
+          });
+
+          maxIterations--;
+        }
+
+        return clusters;
+      }
+
+      // 查找最近的中心点
+      function findClosestCenter(point, centers) {
+        let minDist = Infinity;
+        let closest = 0;
+        centers.forEach((center, i) => {
+          const dist = Math.sqrt(
+            Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2)
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            closest = i;
+          }
+        });
+        return closest;
+      }
+
+      // 计算中心点
+      function calculateCenter(points) {
+        const sum = points.reduce(
+          (acc, p) => ({
+            x: acc.x + p.x,
+            y: acc.y + p.y,
+          }),
+          { x: 0, y: 0 }
+        );
+        return {
+          x: sum.x / points.length,
+          y: sum.y / points.length,
+        };
+      }
+
+      // 自定义桥接边检测算法
+      function detectBridges(cy) {
+        const bridges = [];
+        const edges = cy.edges();
+
+        edges.forEach((edge) => {
+          // 暂时移除边
+          const edgeData = edge.remove();
+
+          // 检查连通性
+          const components = cy.elements().components();
+          if (components.length > 1) {
+            bridges.push(edge);
+          }
+
+          // 恢复边
+          cy.add(edgeData);
+        });
+
+        return bridges;
+      }
+
+      // 自定义关节点检测算法
+      function detectArticulationPoints(cy) {
+        const articulationPoints = [];
+        const nodes = cy.nodes();
+
+        nodes.forEach((node) => {
+          // 暂时移除节点及其关联的边
+          const nodeData = node.remove();
+
+          // 检查连通性
+          const components = cy.elements().components();
+          if (components.length > 1) {
+            articulationPoints.push(node);
+          }
+
+          // 恢复节点
+          cy.add(nodeData);
+        });
+
+        return articulationPoints;
+      }
+
+      // 修改桥接边分析函数
+      function findBridges() {
+        resetHighlight();
+        const bridges = detectBridges(cy);
+
+        // 动画展示桥接边
+        bridges.forEach((edge, index) => {
+          setTimeout(() => {
+            edge.addClass("bridge");
+
+            // 添加脉冲动画效果
+            const animate = () => {
+              edge
+                .animate({
+                  style: { width: 6 },
+                  duration: 1000,
+                })
+                .animate({
+                  style: { width: 4 },
+                  duration: 1000,
+                  complete: animate,
+                });
+            };
+            animate();
+
+            // 高亮相连节点
+            edge.connectedNodes().addClass("highlighted");
+          }, index * 500);
+        });
+
+        let result = "<strong>桥接边分析结果:</strong><br><br>";
+        result +=
+          "桥接边是删除后会导致图不连通的边。它们在网络中起着关键的连接作用。<br><br>";
+
+        if (bridges.length > 0) {
+          result += "发现的桥接边:<br>";
+          bridges.forEach((edge) => {
+            const source = edge.source().data("label");
+            const target = edge.target().data("label");
+            result += `<span style="color: #ff4444">▶</span> ${source} → ${target}: 
+                      连接了两个不同的社区<br>`;
+          });
+          result += "<br><strong>影响分析:</strong><br>";
+          result += "- 这些边的删除会导致网络分裂成不连通的部分<br>";
+          result += "- 它们是社区间信息流通的唯一通道<br>";
+          result += "- 需要特别关注这些连接的稳定性";
+        } else {
+          result += "未发现桥接边，网络具有较强的连通性。";
+        }
+
+        showResult(result, "O(V+E)");
+      }
+
+      // 修改关节点分析函数
+      function findArticulationPoints() {
+        resetHighlight();
+        const articulationPoints = detectArticulationPoints(cy);
+
+        // 动画展示关节点
+        articulationPoints.forEach((node, index) => {
+          setTimeout(() => {
+            node.addClass("articulation-point");
+
+            // 添加脉冲动画效果
+            const animate = () => {
+              node
+                .animate({
+                  style: { width: 40, height: 40 },
+                  duration: 1000,
+                })
+                .animate({
+                  style: { width: 35, height: 35 },
+                  duration: 1000,
+                  complete: animate,
+                });
+            };
+            animate();
+
+            // 高亮相连边
+            node.connectedEdges().addClass("highlighted");
+          }, index * 500);
+        });
+
+        let result = "<strong>关节点分析结果:</strong><br><br>";
+        result +=
+          "关节点是删除后会增加图的连通分量的节点。它们是网络中的关键节点。<br><br>";
+
+        if (articulationPoints.length > 0) {
+          result += "发现的关节点:<br>";
+          articulationPoints.forEach((node) => {
+            const label = node.data("label");
+            const neighbors = node.neighborhood().length;
+            const communities = new Set(
+              node
+                .neighborhood()
+                .nodes()
+                .map((n) => n.data("label")[0])
+            ).size;
+
+            result += `<span style="color: #4444ff">◆</span> ${label}: 
+                      连接了 ${neighbors} 个邻居节点, 
+                      跨越 ${communities} 个社区<br>`;
+          });
+          result += "<br><strong>影响分析:</strong><br>";
+          result += "- 这些节点的删除会导致网络分裂成多个部分<br>";
+          result += "- 它们是不同社区间的关键中转站<br>";
+          result += "- 建议为这些节点建立备份路径";
+        } else {
+          result += "未发现关节点，网络具有较强的连通性。";
+        }
+
+        showResult(result, "O(V+E)");
+      }
+
+      // 重置高亮（增强版）
+      function resetHighlight() {
+        // 停止所有正在进行的动画
+        cy.elements().stop();
+
+        // 移除所有样式类
+        cy.elements().removeClass("highlighted bridge articulation-point");
+
+        // 重置节点大小
+        cy.nodes().forEach((node) => {
+          node.style({
+            width: 30,
+            height: 30,
+          });
+        });
+
+        // 重置边的样式
+        cy.edges().forEach((edge) => {
+          edge.style({
+            width: "data(weight)",
+          });
+        });
+
+        // 清除聚类样式
+        ["cluster-0", "cluster-1", "cluster-2"].forEach((cls) => {
+          cy.elements().removeClass(cls);
+        });
+
+        showResult("");
+      }
+    </script>
+  </body>
+</html>

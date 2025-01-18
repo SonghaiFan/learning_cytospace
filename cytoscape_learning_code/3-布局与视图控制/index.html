@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - 动画与视图</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+      #view-info {
+        width: 600px;
+        margin: 20px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>动画与视图示例</h1>
+      <div>
+        <button onclick="animateNode()" title="随机选择一个节点并执行移动动画">
+          节点动画
+        </button>
+        <button
+          onclick="animateEdge()"
+          title="随机选择一个边并执行宽度/颜色动画"
+        >
+          边动画
+        </button>
+        <button onclick="animateGraph()" title="整体图形动画">图形动画</button>
+      </div>
+      <div>
+        <button onclick="zoomToFit()" title="缩放以适应所有元素">
+          适应视图
+        </button>
+        <button onclick="centerSelected()" title="将选中的元素居中显示">
+          居中选中
+        </button>
+        <button onclick="resetView()" title="重置视图到初始状态">
+          重置视图
+        </button>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div id="view-info">
+      <strong>视图信息:</strong>
+      <div id="info-content"></div>
+    </div>
+    <script>
+      // 初始化 Cytoscape 实例
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // 节点
+          { data: { id: "a", label: "A" } },
+          { data: { id: "b", label: "B" } },
+          { data: { id: "c", label: "C" } },
+          { data: { id: "d", label: "D" } },
+          // 边
+          { data: { id: "ab", source: "a", target: "b" } },
+          { data: { id: "bc", source: "b", target: "c" } },
+          { data: { id: "cd", source: "c", target: "d" } },
+          { data: { id: "da", source: "d", target: "a" } },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+              "transition-property":
+                "background-color, width, height, position, opacity",
+              "transition-duration": "0.5s",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+              "curve-style": "bezier",
+              "transition-property": "line-color, width, opacity",
+              "transition-duration": "0.5s",
+            },
+          },
+          {
+            selector: ":selected",
+            style: {
+              "background-color": "#f62",
+              "line-color": "#f62",
+            },
+          },
+        ],
+        layout: { name: "circle" },
+      });
+
+      // 更新视图信息
+      function updateViewInfo() {
+        const zoom = cy.zoom();
+        const pan = cy.pan();
+        const extent = cy.extent();
+        document.getElementById("info-content").innerHTML = `
+          缩放: ${zoom.toFixed(2)}<br>
+          平移: (${Math.round(pan.x)}, ${Math.round(pan.y)})<br>
+          范围: ${Math.round(extent.w)} x ${Math.round(extent.h)}
+        `;
+      }
+
+      // 节点动画
+      function animateNode() {
+        const nodes = cy.nodes();
+        const randomNode = nodes[Math.floor(Math.random() * nodes.length)];
+        const centerX = cy.width() / 2;
+        const centerY = cy.height() / 2;
+        const radius = Math.min(cy.width(), cy.height()) / 3;
+        const angle = Math.random() * 2 * Math.PI;
+
+        randomNode.animate(
+          {
+            position: {
+              x: centerX + radius * Math.cos(angle),
+              y: centerY + radius * Math.sin(angle),
+            },
+            style: {
+              "background-color": "#900",
+              width: 50,
+              height: 50,
+            },
+          },
+          {
+            duration: 1000,
+            complete: function () {
+              randomNode.animate(
+                {
+                  style: {
+                    "background-color": "#666",
+                    width: 20,
+                    height: 20,
+                  },
+                },
+                {
+                  duration: 1000,
+                }
+              );
+            },
+          }
+        );
+      }
+
+      // 边动画
+      function animateEdge() {
+        const edges = cy.edges();
+        const randomEdge = edges[Math.floor(Math.random() * edges.length)];
+
+        randomEdge.animate(
+          {
+            style: {
+              "line-color": "#900",
+              width: 5,
+            },
+          },
+          {
+            duration: 1000,
+            complete: function () {
+              randomEdge.animate(
+                {
+                  style: {
+                    "line-color": "#999",
+                    width: 2,
+                  },
+                },
+                {
+                  duration: 1000,
+                }
+              );
+            },
+          }
+        );
+      }
+
+      // 图形动画
+      function animateGraph() {
+        // 先缩小并降低透明度
+        cy.animate(
+          {
+            fit: {
+              padding: 100,
+            },
+            style: {
+              opacity: 0.5,
+            },
+          },
+          {
+            duration: 500,
+            complete: function () {
+              // 然后旋转并恢复
+              cy.elements().animate(
+                {
+                  position: function (ele) {
+                    const angle = Math.PI;
+                    const centerX = cy.width() / 2;
+                    const centerY = cy.height() / 2;
+                    const currentPos = ele.position();
+                    const dx = currentPos.x - centerX;
+                    const dy = currentPos.y - centerY;
+                    return {
+                      x: centerX + dx * Math.cos(angle) - dy * Math.sin(angle),
+                      y: centerY + dx * Math.sin(angle) + dy * Math.cos(angle),
+                    };
+                  },
+                  style: {
+                    opacity: 1,
+                  },
+                },
+                {
+                  duration: 1000,
+                }
+              );
+            },
+          }
+        );
+      }
+
+      // 缩放以适应所有元素
+      function zoomToFit() {
+        cy.animate(
+          {
+            fit: {
+              padding: 50,
+            },
+          },
+          {
+            duration: 1000,
+          }
+        );
+      }
+
+      // 居中显示选中的元素
+      function centerSelected() {
+        const selected = cy.$(":selected");
+        if (selected.length > 0) {
+          cy.animate(
+            {
+              center: {
+                eles: selected,
+              },
+              zoom: 2,
+            },
+            {
+              duration: 1000,
+            }
+          );
+        }
+      }
+
+      // 重置视图
+      function resetView() {
+        cy.animate(
+          {
+            fit: {
+              padding: 50,
+            },
+            zoom: 1,
+          },
+          {
+            duration: 1000,
+          }
+        );
+      }
+
+      // 监听视图变化
+      cy.on("viewport", updateViewInfo);
+      updateViewInfo();
+    </script>
+  </body>
+</html>
