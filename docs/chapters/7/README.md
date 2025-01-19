@@ -1,358 +1,213 @@
-# 7. 数据导出与导入
+# 7. 数据导入与导出
 
-> [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/7-数据导入导出) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-数据导入导出/index.html)
+> [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/7-数据导入导出) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-数据导入导出/index.html)
 
-本章节将介绍如何在 Cytoscape.js 中实现数据的导出和导入功能，包括图数据的序列化、反序列化，以及与其他格式的转换。每个功能都将提供传统方式和 React 方式两种实现。
+本章节介绍如何在 Cytoscape.js 中实现数据的导入和导出功能，包括多种格式的导出、数据导入、预览和状态管理等功能。
 
-## 核心概念
+## 数据导出
 
-### 数据格式
+### JSON 导出
 
-- **JSON 格式**: 节点和边的数据结构
-- **图形格式**: GraphML, GEXF 等标准格式
-- **图片格式**: PNG, JPEG, SVG 等可视化输出
-
-### 数据处理流程
-
-1. **导出流程**
-
-   - 数据收集与过滤
-   - 格式转换
-   - 文件生成
-
-2. **导入流程**
-   - 文件解析
-   - 数据验证
-   - 图形重建
-
-## 传统方式实现
-
-### 1. JSON 数据处理
+使用 Cytoscape.js 的内置 JSON 序列化功能导出完整的图数据：
 
 ```javascript
-// 导出为 JSON
-function exportToJson() {
-  const elements = cy.elements().map((ele) => ({
-    group: ele.isNode() ? "nodes" : "edges",
-    data: ele.data(),
-    position: ele.isNode() ? ele.position() : undefined,
-    selected: ele.selected(),
-    style: ele.style(),
-  }));
-
-  const graphData = {
-    elements,
-    style: cy.style().json(),
-    layout: cy.layout().options,
-  };
-
-  return JSON.stringify(graphData, null, 2);
-}
-
-// 从 JSON 导入
-function importFromJson(jsonString) {
-  const graphData = JSON.parse(jsonString);
-
-  cy.elements().remove(); // 清除现有元素
-  cy.add(graphData.elements);
-  cy.style(graphData.style);
-
-  // 应用布局
-  cy.layout(graphData.layout).run();
-
-  // 恢复选中状态
-  graphData.elements.forEach((ele) => {
-    if (ele.selected) {
-      cy.$id(ele.data.id).select();
-    }
+function exportJSON() {
+  const data = cy.json();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: "application/json",
   });
+  saveAs(blob, "graph.json");
+  showPreview(JSON.stringify(data, null, 2));
 }
 ```
 
-### 2. 图片导出
+### CSV 导出
+
+将节点和边的数据分别导出为 CSV 格式：
 
 ```javascript
-// PNG 导出
-function exportToPng() {
-  const pngBlob = cy.png({
-    output: "blob",
-    bg: "#ffffff",
-    full: true,
-    scale: 2,
-    maxWidth: 4000,
-    maxHeight: 4000,
-  });
-
-  return pngBlob;
-}
-
-// SVG 导出
-function exportToSvg() {
-  const svgStr = cy.svg({
-    full: true,
-    scale: 2,
-    bg: "#ffffff",
-  });
-
-  return svgStr;
-}
-```
-
-### 3. 图形格式转换
-
-```javascript
-// GraphML 导出
-function exportToGraphML() {
-  let graphml = '<?xml version="1.0" encoding="UTF-8"?>\n';
-  graphml += '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">\n';
-
-  // 添加数据属性定义
-  graphml +=
-    '<key id="label" for="node" attr.name="label" attr.type="string"/>\n';
-  graphml +=
-    '<key id="weight" for="edge" attr.name="weight" attr.type="double"/>\n';
-
-  // 添加图形数据
-  graphml += '<graph id="G" edgedefault="directed">\n';
-
-  // 添加节点
+function exportCSV() {
+  // 节点 CSV
+  let nodesCSV = "id,label,type\n";
   cy.nodes().forEach((node) => {
-    graphml += `<node id="${node.id()}">\n`;
-    graphml += `  <data key="label">${node.data("label")}</data>\n`;
-    graphml += "</node>\n";
+    const data = node.data();
+    nodesCSV += `${data.id},${data.label},${data.type}\n`;
   });
 
-  // 添加边
+  // 边 CSV
+  let edgesCSV = "id,source,target,type,weight\n";
   cy.edges().forEach((edge) => {
-    graphml += `<edge source="${edge.source().id()}" target="${edge
-      .target()
-      .id()}">\n`;
-    graphml += `  <data key="weight">${edge.data("weight") || 1}</data>\n`;
-    graphml += "</edge>\n";
+    const data = edge.data();
+    edgesCSV += `${data.id},${data.source},${data.target},${data.type},${data.weight}\n`;
   });
 
-  graphml += "</graph>\n</graphml>";
-  return graphml;
+  const blob = new Blob(["Nodes:\n", nodesCSV, "\nEdges:\n", edgesCSV], {
+    type: "text/csv",
+  });
+  saveAs(blob, "graph.csv");
 }
 ```
 
-## React 方式实现
+### 图像导出
 
-### 1. 数据导出组件
+支持导出为 PNG 格式的图片：
 
-```typescript
-interface ExportOptions {
-  format: "json" | "png" | "svg" | "graphml";
-  filename?: string;
+```javascript
+function exportImage() {
+  const png64 = cy.png();
+  const link = document.createElement("a");
+  link.download = "graph.png";
+  link.href = png64;
+  link.click();
 }
+```
 
-export function ExportControls({ cy }: { cy: cytoscape.Core }) {
-  const handleExport = useCallback(
-    async (options: ExportOptions) => {
-      try {
-        let content: string | Blob;
-        let mimeType: string;
+## 数据导入
 
-        switch (options.format) {
-          case "json":
-            content = exportToJson();
-            mimeType = "application/json";
-            break;
-          case "png":
-            content = await cy.png({ output: "blob" });
-            mimeType = "image/png";
-            break;
-          case "svg":
-            content = cy.svg();
-            mimeType = "image/svg+xml";
-            break;
-          case "graphml":
-            content = exportToGraphML();
-            mimeType = "application/xml";
-            break;
-        }
+### 文件导入
 
-        // 创建下载链接
-        const blob =
-          content instanceof Blob
-            ? content
-            : new Blob([content], { type: mimeType });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = options.filename || `graph.${options.format}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error("Export failed:", error);
+支持导入 JSON 和 CSV 格式的文件：
+
+```javascript
+function importData() {
+  const file = document.getElementById("file-input").files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      if (file.name.endsWith(".json")) {
+        const data = JSON.parse(e.target.result);
+        cy.json(data);
+      } else if (file.name.endsWith(".csv")) {
+        importCSV(e.target.result);
       }
-    },
-    [cy]
-  );
+    } catch (error) {
+      console.error("导入失败:", error);
+    }
+  };
+  reader.readAsText(file);
+}
 
-  return (
-    <div className="export-controls">
-      <button
-        onClick={() => handleExport({ format: "json", filename: "graph.json" })}
-      >
-        导出 JSON
-      </button>
-      <button
-        onClick={() => handleExport({ format: "png", filename: "graph.png" })}
-      >
-        导出 PNG
-      </button>
-      <button
-        onClick={() => handleExport({ format: "svg", filename: "graph.svg" })}
-      >
-        导出 SVG
-      </button>
-      <button
-        onClick={() =>
-          handleExport({ format: "graphml", filename: "graph.graphml" })
-        }
-      >
-        导出 GraphML
-      </button>
-    </div>
-  );
+// CSV 格式解析
+function parseCSV(csv) {
+  const lines = csv.trim().split("\n");
+  const headers = lines[0].split(",");
+  return lines.slice(1).map((line) => {
+    const values = line.split(",");
+    const obj = {};
+    headers.forEach((header, i) => {
+      obj[header] = values[i];
+    });
+    return obj;
+  });
+}
+
+// 导入 CSV 数据
+function importCSV(content) {
+  const [nodesSection, edgesSection] = content.split("\nEdges:\n");
+  const nodes = parseCSV(nodesSection.replace("Nodes:\n", ""));
+  const edges = parseCSV(edgesSection);
+
+  // 更新图形
+  cy.elements().remove();
+  nodes.forEach((node) => {
+    cy.add({ group: "nodes", data: node });
+  });
+  edges.forEach((edge) => {
+    cy.add({ group: "edges", data: edge });
+  });
+  cy.layout({ name: "grid" }).run();
 }
 ```
 
-### 2. 数据导入组件
+### 数据预览
 
-```typescript
-interface ImportOptions {
-  format: "json" | "graphml";
+实现数据导入导出的预览功能：
+
+```javascript
+function showPreview(content) {
+  document.getElementById("preview-content").textContent = content;
 }
 
-export function ImportControls({
-  cy,
-  onImport,
-}: {
-  cy: cytoscape.Core;
-  onImport?: () => void;
-}) {
-  const handleFileSelect = useCallback(
-    async (event: React.ChangeEvent<HTMLInputElement>) => {
-      const file = event.target.files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const format = file.name
-          .split(".")
-          .pop()
-          ?.toLowerCase() as ImportOptions["format"];
-
-        switch (format) {
-          case "json":
-            importFromJson(text);
-            break;
-          case "graphml":
-            // 实现 GraphML 导入逻辑
-            break;
-        }
-
-        onImport?.();
-      } catch (error) {
-        console.error("Import failed:", error);
-      }
-    },
-    [cy, onImport]
-  );
-
-  return (
-    <div className="import-controls">
-      <input
-        type="file"
-        accept=".json,.graphml"
-        onChange={handleFileSelect}
-        className="hidden"
-        id="file-input"
-      />
-      <label htmlFor="file-input" className="button">
-        导入文件
-      </label>
-    </div>
-  );
-}
+// 监听文件选择
+document.getElementById("file-input").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (file) {
+    showPreview(`已选择文件: ${file.name}`);
+  }
+});
 ```
 
-### 3. 使用示例
+## 图形重置
 
-```typescript
-export default function GraphIO() {
-  const [message, setMessage] = useState<string>("");
+提供重置图形到初始状态的功能：
 
-  return (
-    <div className="graph-io">
-      <CytoscapeGraph
-        elements={graphData}
-        style={graphStyle}
-        onReady={(cy) => (
-          <div className="io-controls">
-            <ExportControls cy={cy} />
-            <ImportControls cy={cy} onImport={() => setMessage("导入成功！")} />
-            {message && <div className="message">{message}</div>}
-          </div>
-        )}
-      />
-    </div>
-  );
+```javascript
+function resetGraph() {
+  cy.elements().remove();
+  cy.add([
+    // 初始节点
+    { data: { id: "a", label: "A", type: "user" } },
+    { data: { id: "b", label: "B", type: "user" } },
+    // 初始边
+    {
+      data: {
+        id: "ab",
+        source: "a",
+        target: "b",
+        type: "friend",
+        weight: 1,
+      },
+    },
+  ]);
+  cy.layout({ name: "grid" }).run();
 }
 ```
 
 ## 最佳实践
 
-### 1. 数据处理
+1. 数据格式
 
-- **数据验证**
+   - 支持多种标准格式（JSON、CSV）
+   - 保持数据结构的一致性
+   - 包含必要的元数据（节点类型、边权重等）
 
-  - 检查数据完整性
-  - 验证数据格式
-  - 处理异常情况
+2. 用户体验
 
-- **性能优化**
-  - 分批处理大型数据
-  - 使用流式处理
-  - 优化内存使用
+   - 提供文件选择和拖放导入
+   - 实现数据预览功能
+   - 添加导入导出进度反馈
+   - 支持图形状态重置
 
-### 2. 用户体验
+3. 错误处理
 
-- **交互设计**
+   - 验证导入数据的格式
+   - 提供清晰的错误提示
+   - 支持导入失败的回滚
 
-  - 提供进度反馈
-  - 支持拖放操作
-  - 预览导入结果
+4. 性能优化
+   - 分批处理大型数据集
+   - 优化数据解析过程
+   - 实现异步导入导出
 
-- **错误处理**
-  - 友好的错误提示
-  - 提供回滚机制
-  - 数据恢复选项
+## 示例：完整的数据管理界面
 
-### 3. 格式支持
-
-- **标准格式**
-
-  - 支持常用图形格式
-  - 保持格式兼容性
-  - 提供格式转换
-
-- **自定义格式**
-  - 定义清晰的格式规范
-  - 提供格式验证工具
-  - 支持扩展性
-
-### 4. 安全性
-
-- **数据安全**
-
-  - 敏感数据处理
-  - 文件大小限制
-  - 格式检查
-
-- **错误恢复**
-  - 自动备份
-  - 版本控制
-  - 导入回滚
+```html
+<div class="controls">
+  <div>
+    <button onclick="exportJSON()">导出 JSON</button>
+    <button onclick="exportCSV()">导出 CSV</button>
+    <button onclick="exportImage()">导出图片</button>
+  </div>
+  <div>
+    <input type="file" id="file-input" accept=".json,.csv" />
+    <button onclick="importData()">导入数据</button>
+    <button onclick="resetGraph()">重置图形</button>
+  </div>
+</div>
+<div id="data-preview">
+  <strong>数据预览:</strong>
+  <div id="preview-content"></div>
+</div>
+```

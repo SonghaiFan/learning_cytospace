@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cytoscape.js - 数据导出</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
       #cy {
         width: 600px;
@@ -14,48 +15,75 @@
       }
       .controls {
         text-align: center;
-        margin: 10px;
+        margin: 20px;
       }
       button {
         margin: 5px;
         padding: 5px 10px;
       }
-      #output {
-        margin: 10px;
+      #file-input {
+        display: none;
+      }
+      #data-preview {
+        width: 600px;
+        margin: 20px auto;
         padding: 10px;
         border: 1px solid #ccc;
         max-height: 200px;
-        overflow: auto;
+        overflow-y: auto;
+        font-family: monospace;
+        white-space: pre;
       }
     </style>
   </head>
   <body>
     <div class="controls">
-      <button onclick="exportJSON()">导出 JSON</button>
-      <button onclick="exportPNG()">导出 PNG</button>
-      <button onclick="exportSVG()">导出 SVG</button>
-      <button onclick="saveSnapshot()">保存快照</button>
-      <button onclick="restoreSnapshot()">恢复快照</button>
+      <h1>数据导出示例</h1>
+      <div>
+        <button onclick="exportJSON()" title="导出为 JSON 格式">
+          导出 JSON
+        </button>
+        <button onclick="exportCSV()" title="导出为 CSV 格式">导出 CSV</button>
+        <button onclick="exportImage()" title="导出为 PNG 图片">
+          导出图片
+        </button>
+      </div>
+      <div>
+        <input type="file" id="file-input" accept=".json,.csv" />
+        <button onclick="document.getElementById('file-input').click()">
+          选择文件
+        </button>
+        <button onclick="importData()" title="从选择的文件导入数据">
+          导入数据
+        </button>
+        <button onclick="resetGraph()" title="重置图形到初始状态">
+          重置图形
+        </button>
+      </div>
     </div>
     <div id="cy"></div>
-    <div id="output"></div>
+    <div id="data-preview">
+      <strong>数据预览:</strong>
+      <div id="preview-content"></div>
+    </div>
     <script>
-      let lastSnapshot = null;
-
+      // 初始化 Cytoscape 实例
       const cy = cytoscape({
         container: document.getElementById("cy"),
         elements: [
           // 节点
-          { data: { id: "a", label: "节点 A" } },
-          { data: { id: "b", label: "节点 B" } },
-          { data: { id: "c", label: "节点 C" } },
+          { data: { id: "a", label: "A", type: "user" } },
+          { data: { id: "b", label: "B", type: "user" } },
+          { data: { id: "c", label: "C", type: "group" } },
+          { data: { id: "d", label: "D", type: "user" } },
           // 边
           {
             data: {
               id: "ab",
               source: "a",
               target: "b",
-              label: "关系 AB",
+              type: "friend",
+              weight: 1,
             },
           },
           {
@@ -63,7 +91,17 @@
               id: "bc",
               source: "b",
               target: "c",
-              label: "关系 BC",
+              type: "member",
+              weight: 2,
+            },
+          },
+          {
+            data: {
+              id: "cd",
+              source: "c",
+              target: "d",
+              type: "member",
+              weight: 1,
             },
           },
         ],
@@ -73,8 +111,6 @@
             style: {
               "background-color": "#666",
               label: "data(label)",
-              width: 30,
-              height: 30,
             },
           },
           {
@@ -83,101 +119,178 @@
               width: 2,
               "line-color": "#999",
               "curve-style": "bezier",
-              "target-arrow-shape": "triangle",
-              label: "data(label)",
             },
           },
         ],
-        layout: {
-          name: "grid",
-        },
+        layout: { name: "grid" },
       });
 
-      // 导出 JSON
+      // 导出为 JSON
       function exportJSON() {
-        const jsonData = cy.json();
-        const jsonString = JSON.stringify(jsonData, null, 2);
-
-        // 显示 JSON 数据
-        document.getElementById("output").innerHTML = `
-          <pre>${jsonString}</pre>
-        `;
-
-        // 创建下载链接
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "graph.json";
-        link.click();
+        const data = cy.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        saveAs(blob, "graph.json");
+        showPreview(JSON.stringify(data, null, 2));
       }
 
-      // 导出 PNG
-      function exportPNG() {
-        const png64 = cy.png({
-          scale: 2,
-          full: true,
-          quality: 1,
+      // 导出为 CSV
+      function exportCSV() {
+        // 节点 CSV
+        let nodesCSV = "id,label,type\n";
+        cy.nodes().forEach((node) => {
+          const data = node.data();
+          nodesCSV += `${data.id},${data.label},${data.type}\n`;
         });
 
-        // 创建下载链接
+        // 边 CSV
+        let edgesCSV = "id,source,target,type,weight\n";
+        cy.edges().forEach((edge) => {
+          const data = edge.data();
+          edgesCSV += `${data.id},${data.source},${data.target},${data.type},${data.weight}\n`;
+        });
+
+        const blob = new Blob(["Nodes:\n", nodesCSV, "\nEdges:\n", edgesCSV], {
+          type: "text/csv",
+        });
+        saveAs(blob, "graph.csv");
+        showPreview("Nodes:\n" + nodesCSV + "\nEdges:\n" + edgesCSV);
+      }
+
+      // 导出为图片
+      function exportImage() {
+        const png64 = cy.png();
         const link = document.createElement("a");
-        link.href = png64;
         link.download = "graph.png";
+        link.href = png64;
         link.click();
+        showPreview("图片已导出为 PNG 格式");
       }
 
-      // 导出 SVG
-      function exportSVG() {
-        const svgContent = cy.svg({
-          scale: 1,
-          full: true,
-          bg: "#ffffff",
-        });
-
-        // 创建下载链接
-        const blob = new Blob([svgContent], {
-          type: "image/svg+xml;charset=utf-8",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "graph.svg";
-        link.click();
-      }
-
-      // 保存快照
-      function saveSnapshot() {
-        lastSnapshot = {
-          elements: cy.json().elements,
-          layout: {
-            name: cy.layout().options.name,
-            options: cy.layout().options,
-          },
-          style: cy.style().json(),
-          zoom: cy.zoom(),
-          pan: cy.pan(),
-        };
-
-        document.getElementById("output").innerHTML = "状态已保存";
-      }
-
-      // 恢复快照
-      function restoreSnapshot() {
-        if (!lastSnapshot) {
-          document.getElementById("output").innerHTML = "没有可用的快照";
+      // 导入数据
+      function importData() {
+        const file = document.getElementById("file-input").files[0];
+        if (!file) {
+          alert("请先选择文件");
           return;
         }
 
-        cy.elements().remove();
-        cy.add(lastSnapshot.elements);
-        cy.style(lastSnapshot.style);
-        cy.zoom(lastSnapshot.zoom);
-        cy.pan(lastSnapshot.pan);
-        cy.layout(lastSnapshot.layout).run();
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            if (file.name.endsWith(".json")) {
+              const data = JSON.parse(e.target.result);
+              cy.json(data);
+              showPreview(JSON.stringify(data, null, 2));
+            } else if (file.name.endsWith(".csv")) {
+              // 解析 CSV
+              const content = e.target.result;
+              const [nodesSection, edgesSection] = content.split("\nEdges:\n");
+              const nodes = parseCSV(nodesSection.replace("Nodes:\n", ""));
+              const edges = parseCSV(edgesSection);
 
-        document.getElementById("output").innerHTML = "状态已恢复";
+              // 更新图形
+              cy.elements().remove();
+              nodes.forEach((node) => {
+                cy.add({
+                  group: "nodes",
+                  data: node,
+                });
+              });
+              edges.forEach((edge) => {
+                cy.add({
+                  group: "edges",
+                  data: edge,
+                });
+              });
+              cy.layout({ name: "grid" }).run();
+              showPreview(content);
+            }
+          } catch (error) {
+            alert("导入失败: " + error.message);
+          }
+        };
+
+        if (file.name.endsWith(".json")) {
+          reader.readAsText(file);
+        } else if (file.name.endsWith(".csv")) {
+          reader.readAsText(file);
+        } else {
+          alert("不支持的文件格式");
+        }
       }
+
+      // 解析 CSV
+      function parseCSV(csv) {
+        const lines = csv.trim().split("\n");
+        const headers = lines[0].split(",");
+        return lines.slice(1).map((line) => {
+          const values = line.split(",");
+          const obj = {};
+          headers.forEach((header, i) => {
+            obj[header] = values[i];
+          });
+          return obj;
+        });
+      }
+
+      // 重置图形
+      function resetGraph() {
+        cy.elements().remove();
+        cy.add([
+          // 节点
+          { data: { id: "a", label: "A", type: "user" } },
+          { data: { id: "b", label: "B", type: "user" } },
+          { data: { id: "c", label: "C", type: "group" } },
+          { data: { id: "d", label: "D", type: "user" } },
+          // 边
+          {
+            data: {
+              id: "ab",
+              source: "a",
+              target: "b",
+              type: "friend",
+              weight: 1,
+            },
+          },
+          {
+            data: {
+              id: "bc",
+              source: "b",
+              target: "c",
+              type: "member",
+              weight: 2,
+            },
+          },
+          {
+            data: {
+              id: "cd",
+              source: "c",
+              target: "d",
+              type: "member",
+              weight: 1,
+            },
+          },
+        ]);
+        cy.layout({ name: "grid" }).run();
+        showPreview("图形已重置为初始状态");
+      }
+
+      // 显示预览
+      function showPreview(content) {
+        document.getElementById("preview-content").textContent = content;
+      }
+
+      // 监听文件选择
+      document
+        .getElementById("file-input")
+        .addEventListener("change", function (e) {
+          const file = e.target.files[0];
+          if (file) {
+            showPreview(`已选择文件: ${file.name}`);
+          }
+        });
     </script>
   </body>
 </html>

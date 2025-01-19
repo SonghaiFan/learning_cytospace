@@ -2,75 +2,23 @@
 
 > [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/1-环境搭建与初始化) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
 
-本章节将介绍两种使用 Cytoscape.js 的方式：
+本章节将介绍如何使用 Cytoscape.js 构建图可视化应用。我们将通过两种实现方式来展示：
 
-1. 传统方式：使用纯 HTML 和 JavaScript
-2. 现代方式：使用 React 和 NPM
+1. VanillaJS 方式：使用纯 HTML 和 JavaScript
+2. React 方式：使用 TypeScript 和 Next.js
 
-## 实现方式对比
+## VanillaJS 实现
 
-### 传统方式特点
+### 基础环境配置
 
-- 优点：
-  - 简单直接，无需构建工具
-  - 适合快速原型开发
-  - 容易集成到现有网页
-- 缺点：
-  - 缺乏类型检查
-  - 不易维护和扩展
-  - 难以复用代码
-
-### React 方式特点
-
-- 优点：
-  - 类型安全（TypeScript）
-  - 组件化和可复用
-  - 响应式更新
-  - 更好的代码组织
-  - 完整的开发工具链
-- 缺点：
-  - 需要构建工具
-  - 学习曲线较陡
-  - 初始设置较复杂
-
-## 环境搭建
-
-### 传统方式
-
-1. 创建项目目录
-2. 使用 CDN 引入 Cytoscape.js：
+1. 创建一个新的 HTML 文件
+2. 通过 CDN 引入 Cytoscape.js：
 
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
 ```
 
-### React 方式
-
-1. 创建 Next.js 项目：
-
-```bash
-npx create-next-app@latest my-cytoscape-app
-cd my-cytoscape-app
-```
-
-2. 选择项目配置：
-
-- TypeScript: Yes
-- ESLint: Yes
-- Tailwind CSS: Yes
-- `src/` directory: Yes
-- App Router: Yes
-- Import alias: Yes
-
-3. 安装依赖：
-
-```bash
-npm install cytoscape @types/cytoscape
-```
-
-## 基本实现
-
-### 传统方式实现
+### 基本页面结构
 
 ```html
 <!DOCTYPE html>
@@ -78,8 +26,7 @@ npm install cytoscape @types/cytoscape
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 传统方式实现</title>
-    <!-- 从 CDN 加载 Cytoscape.js -->
+    <title>Cytoscape.js - VanillaJS实现</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
       #cy {
@@ -96,41 +43,68 @@ npm install cytoscape @types/cytoscape
   </head>
   <body>
     <div class="controls">
-      <h1>Cytoscape.js 传统实现示例</h1>
+      <h1>Cytoscape.js VanillaJS实现示例</h1>
     </div>
     <div id="cy"></div>
-    <script>
-      const cy = cytoscape({
-        container: document.getElementById("cy"),
-        elements: [],
-        style: [
-          {
-            selector: "node",
-            style: {
-              "background-color": "#666",
-              label: "data(id)",
-            },
-          },
-          {
-            selector: "edge",
-            style: {
-              width: 2,
-              "line-color": "#999",
-            },
-          },
-        ],
-        layout: {
-          name: "grid",
-        },
-      });
-    </script>
   </body>
 </html>
 ```
 
-### React 方式实现
+### 初始化图实例
 
-1. 创建可复用组件 (`src/components/CytoscapeGraph.tsx`)：
+```javascript
+const cy = cytoscape({
+  // 容器元素
+  container: document.getElementById("cy"),
+
+  // 图中的元素（节点和边）
+  elements: [],
+
+  // 样式定义
+  style: [
+    {
+      selector: "node",
+      style: {
+        "background-color": "#666",
+        label: "data(id)",
+      },
+    },
+    {
+      selector: "edge",
+      style: {
+        width: 2,
+        "line-color": "#999",
+      },
+    },
+  ],
+
+  // 布局配置
+  layout: {
+    name: "grid",
+  },
+});
+```
+
+## React 实现
+
+### 项目初始化
+
+1. 创建 Next.js 项目：
+
+```bash
+npx create-next-app@latest my-cytoscape-app --typescript
+cd my-cytoscape-app
+```
+
+2. 安装依赖：
+
+```bash
+npm install cytoscape @types/cytoscape
+```
+
+### 创建 Cytoscape 组件
+
+创建 `src/components/CytoscapeGraph.tsx`：
 
 ```typescript
 "use client";
@@ -157,7 +131,6 @@ export function CytoscapeGraph({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // 初始化 Cytoscape 实例
     cyRef.current = cytoscape({
       container: containerRef.current,
       elements,
@@ -165,16 +138,14 @@ export function CytoscapeGraph({
       layout,
     });
 
-    // 清理函数
     return () => {
       if (cyRef.current) {
         cyRef.current.destroy();
         cyRef.current = null;
       }
     };
-  }, []); // 仅在组件挂载时初始化
+  }, []);
 
-  // 更新元素
   useEffect(() => {
     if (!cyRef.current) return;
     cyRef.current.elements().remove();
@@ -182,7 +153,6 @@ export function CytoscapeGraph({
     cyRef.current.layout(layout).run();
   }, [elements, layout]);
 
-  // 更新样式
   useEffect(() => {
     if (!cyRef.current) return;
     cyRef.current.style(style);
@@ -197,17 +167,17 @@ export function CytoscapeGraph({
 }
 ```
 
-2. 使用组件 (`src/app/page.tsx`)：
+### 使用组件
+
+在页面中使用 (`src/app/page.tsx`)：
 
 ```typescript
 import { CytoscapeGraph } from "@/components/CytoscapeGraph";
 
 export default function Home() {
   const elements = [
-    // 节点
     { data: { id: "a", label: "节点 A" } },
     { data: { id: "b", label: "节点 B" } },
-    // 边
     { data: { id: "ab", source: "a", target: "b", label: "关系 AB" } },
   ];
 
@@ -225,8 +195,6 @@ export default function Home() {
         width: 2,
         "line-color": "#999",
         label: "data(label)",
-        "curve-style": "bezier",
-        "target-arrow-shape": "triangle",
       },
     },
   ];
@@ -244,32 +212,48 @@ export default function Home() {
 }
 ```
 
-## 配置参数说明
+## 实现方式对比
 
-无论使用哪种方式，Cytoscape.js 的核心配置参数都是一致的：
+### VanillaJS 方式
 
-### 必要配置
+优点：
 
-- `container`: 指定图形容器元素
-- `elements`: 初始的节点和边集合
-- `style`: 样式定义数组
-- `layout`: 布局配置对象
+- 简单直接，无需构建工具
+- 适合快速原型开发
+- 容易集成到现有网页
 
-### 容器样式要求
+缺点：
 
-容器元素必须设置明确的宽度和高度：
+- 缺乏类型检查
+- 不易维护和扩展
+- 难以复用代码
 
-```css
-/* 传统方式 */
-#cy {
-  width: 600px;
-  height: 400px;
-  border: 1px solid #ccc;
-}
+### React 方式
 
-/* React/Tailwind 方式 */
-className="w-full h-[600px] border border-gray-200"
-```
+优点：
+
+- 类型安全（TypeScript）
+- 组件化和可复用
+- 响应式更新
+- 更好的代码组织
+- 完整的开发工具链
+
+缺点：
+
+- 需要构建工具
+- 学习曲线较陡
+- 初始设置较复杂
+
+## 核心配置参数
+
+无论使用哪种方式，Cytoscape.js 的核心配置参数都包括：
+
+1. `container`: 图实例的容器元素
+2. `elements`: 图中的节点和边定义
+3. `style`: 图的样式规则
+4. `layout`: 图的布局算法和参数
+
+这些参数可以在初始化时设置，也可以在运行时动态修改。
 
 ## 后续章节说明
 
