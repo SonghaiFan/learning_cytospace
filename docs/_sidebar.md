@@ -1,7 +1,6 @@
 - [首页](/)
 - [1. 环境搭建与初始化](/chapters/1/)
 - [2. 节点与边的基础操作](/chapters/2/)
-
 - [3. 布局与视图控制](/chapters/3/)
   - [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/3-布局与视图控制)
   - [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-布局与视图控制/index.html)

@@ -1,5 +1,7 @@
 # 6. 图算法与分析
 
+> [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/6-图算法与分析) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-图算法与分析/index.html)
+
 本章节将介绍如何在 Cytoscape.js 中使用和实现各种图算法，包括路径查找、连通性分析、中心性计算等。每个功能都将提供传统方式和 React 方式两种实现。
 
 ## 核心概念

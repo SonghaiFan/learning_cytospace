@@ -1,5 +1,7 @@
 # 4. 样式与动画
 
+> [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/4-样式与动画) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-样式与动画/index.html)
+
 本章节将介绍如何在 Cytoscape.js 中设置图形样式和创建动画效果。每个功能都将提供传统方式和 React 方式两种实现。
 
 ## 核心概念
