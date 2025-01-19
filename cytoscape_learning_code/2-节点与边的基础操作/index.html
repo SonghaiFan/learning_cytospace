@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 布局控制</title>
+    <title>Cytoscape.js - 元素操作</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
       #cy {
@@ -24,37 +24,29 @@
   </head>
   <body>
     <div class="controls">
-      <h1>布局控制示例</h1>
-      <button onclick="changeLayout('grid')">网格布局</button>
-      <button onclick="changeLayout('circle')">圆形布局</button>
-      <button onclick="changeLayout('concentric')">同心圆布局</button>
-      <button onclick="changeLayout('breadthfirst')">层次布局</button>
-      <button onclick="changeLayout('random')">随机布局</button>
+      <h1>元素操作示例</h1>
+      <button onclick="addNode()">添加节点</button>
+      <button onclick="addEdge()">添加边</button>
+      <button onclick="removeSelected()">删除选中</button>
+      <button onclick="updateSelected()">更新选中</button>
     </div>
     <div id="cy"></div>
     <script>
       const cy = cytoscape({
         container: document.getElementById("cy"),
         elements: [
-          // 创建一个示例图形
-          { data: { id: "a" } },
-          { data: { id: "b" } },
-          { data: { id: "c" } },
-          { data: { id: "d" } },
-          { data: { id: "e" } },
-          // 边的定义
-          { data: { source: "a", target: "b" } },
-          { data: { source: "b", target: "c" } },
-          { data: { source: "c", target: "d" } },
-          { data: { source: "d", target: "e" } },
-          { data: { source: "e", target: "a" } },
+          // 初始节点
+          { data: { id: "a", label: "节点 A" } },
+          { data: { id: "b", label: "节点 B" } },
+          // 初始边
+          { data: { id: "ab", source: "a", target: "b", label: "边 AB" } },
         ],
         style: [
           {
             selector: "node",
             style: {
               "background-color": "#666",
-              label: "data(id)",
+              label: "data(label)",
             },
           },
           {
@@ -62,60 +54,70 @@
             style: {
               width: 2,
               "line-color": "#999",
+              label: "data(label)",
+              "curve-style": "bezier",
+              "target-arrow-shape": "triangle",
+            },
+          },
+          {
+            selector: ":selected",
+            style: {
+              "background-color": "#900",
+              "line-color": "#900",
+              "target-arrow-color": "#900",
             },
           },
         ],
+        layout: { name: "grid" },
       });
 
-      // 切换布局函数
-      function changeLayout(name) {
-        const layout = cy.layout({
-          name: name, // 布局算法名称
-
-          // 通用布局选项
-          animate: true, // 是否使用动画
-          animationDuration: 500, // 动画持续时间
-          padding: 30, // 布局边距
-
-          // 特定布局的选项
-          // grid 布局选项
-          rows: undefined, // 自动计算行数
-          cols: undefined, // 自动计算列数
-
-          // circle 布局选项
-          radius: undefined, // 自动计算半径
-
-          // concentric 布局选项
-          concentric: function (node) {
-            // 根据节点的度来决定同心圆的层级
-            return node.degree();
-          },
-          levelWidth: function (nodes) {
-            // 每层节点的间距
-            return 2;
-          },
-
-          // breadthfirst（层次）布局选项
-          directed: true, // 是否考虑边的方向
-          roots: undefined, // 自动选择根节点
-
-          // 布局开始和结束的回调
-          ready: function () {
-            // 布局准备就绪
-            console.log("Layout ready");
-          },
-          stop: function () {
-            // 布局完成
-            console.log("Layout stopped");
+      // 添加节点
+      function addNode() {
+        const id = "node-" + Date.now();
+        cy.add({
+          group: "nodes",
+          data: { id, label: `节点 ${id}` },
+          position: {
+            x: Math.random() * 300 + 150,
+            y: Math.random() * 200 + 100,
           },
         });
-
-        // 运行布局
-        layout.run();
       }
 
-      // 初始布局
-      changeLayout("grid");
+      // 添加边
+      function addEdge() {
+        const selected = cy.$("node:selected");
+        if (selected.length === 2) {
+          const [source, target] = selected;
+          const id = "edge-" + Date.now();
+          cy.add({
+            group: "edges",
+            data: {
+              id,
+              source: source.id(),
+              target: target.id(),
+              label: `边 ${id}`,
+            },
+          });
+        } else {
+          alert("请先选择两个节点");
+        }
+      }
+
+      // 删除选中元素
+      function removeSelected() {
+        cy.$(":selected").remove();
+      }
+
+      // 更新选中元素
+      function updateSelected() {
+        cy.$("node:selected").forEach((node) => {
+          const newLabel = prompt("输入新标签:", node.data("label"));
+          if (newLabel) {
+            node.data("label", newLabel);
+          }
+        });
+      }
     </script>
   </body>
 </html>

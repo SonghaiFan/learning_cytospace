@@ -1,367 +1,321 @@
-# 7.5 图算法
+# 6. 图算法与分析
 
-本章节将介绍如何在 Cytoscape.js 中使用和实现各种图算法，包括路径查找、连通性分析、中心性计算等。
+本章节将介绍如何在 Cytoscape.js 中使用和实现各种图算法，包括路径查找、连通性分析、中心性计算等。每个功能都将提供传统方式和 React 方式两种实现。
 
-## 图算法概述
+## 核心概念
 
-Cytoscape.js 提供了丰富的图论算法支持，可用于：
+### 图算法类型
 
-- 最短路径查找
-- 连通性分析
-- 中心性计算
-- 社区发现
-- 图的遍历
+- **路径算法**: 最短路径、全源最短路径等
+- **中心性算法**: PageRank、度中心性、介数中心性等
+- **社区发现**: 聚类分析、模块度优化等
+- **连通性分析**: 桥接边、关节点检测等
 
-## 基础算法
+### 算法复杂度
 
-### 图的遍历
+| 算法类型   | 时间复杂度     | 空间复杂度 |
+| ---------- | -------------- | ---------- |
+| 最短路径   | O((V+E)·log V) | O(V)       |
+| PageRank   | O(E·k)         | O(V)       |
+| 中介中心性 | O(V·E)         | O(V)       |
+| 度中心性   | O(V)           | O(1)       |
+| 桥接边检测 | O(V+E)         | O(V)       |
+| 社区发现   | O(V·k·i)       | O(V)       |
 
-```javascript
-// 广度优先搜索
-let bfs = cy.elements().bfs({
-  roots: "#a",
-  visit: function (v, e, u, i, depth) {
-    console.log("访问节点:", v.id());
-  },
-  directed: false,
-});
+## 传统方式实现
 
-// 深度优先搜索
-let dfs = cy.elements().dfs({
-  roots: "#a",
-  visit: function (v, e, u, i, depth) {
-    console.log("访问节点:", v.id());
-  },
-  directed: false,
-});
-```
-
-### 最短路径
+### 1. 路径分析
 
 ```javascript
-// Dijkstra 算法
-let dijkstra = cy.elements().dijkstra({
-  root: "#a",
-  directed: true,
-  weight: function (edge) {
-    return edge.data("weight");
-  },
-});
+// 最短路径分析
+function findShortestPath(source, target) {
+  const dijkstra = cy.elements().dijkstra({
+    root: source,
+    directed: false,
+    weight: (edge) => edge.data("weight"),
+  });
 
-// 获取到特定节点的路径
-let pathToB = dijkstra.pathTo(cy.$("#b"));
-let distToB = dijkstra.distanceTo(cy.$("#b"));
+  const path = dijkstra.pathTo(target);
+  const distance = dijkstra.distanceTo(target);
+
+  return {
+    path,
+    distance,
+    nodes: path
+      .nodes()
+      .map((n) => n.data("label"))
+      .join(" → "),
+  };
+}
+
+// 使用示例
+const result = findShortestPath(cy.$("#a1"), cy.$("#b2"));
+console.log(`最短路径长度: ${result.distance}`);
+console.log(`经过节点: ${result.nodes}`);
 ```
 
-### 连通性分析
+### 2. 中心性分析
 
 ```javascript
-// 获取连通分量
-let components = cy.elements().components();
+// PageRank 分析
+function analyzePageRank() {
+  const ranks = cy.elements().pageRank();
+  const results = [];
 
-// 检查两个节点是否连通
-let connected = cy.elements().aStar({
-  root: "#a",
-  goal: "#b",
-}).found;
+  cy.nodes().forEach((node) => {
+    const rank = ranks.rank(node);
+    results.push({
+      node: node.data("label"),
+      rank: rank.toFixed(3),
+    });
+
+    // 可视化：节点大小反映重要性
+    node.style({
+      width: 20 + rank * 200,
+      height: 20 + rank * 200,
+    });
+  });
+
+  return results;
+}
+
+// 中介中心性分析
+function analyzeBetweenness() {
+  const bc = cy.elements().betweennessCentrality();
+  const results = [];
+
+  cy.nodes().forEach((node) => {
+    const centrality = bc.betweenness(node);
+    results.push({
+      node: node.data("label"),
+      centrality: centrality.toFixed(3),
+    });
+  });
+
+  return results;
+}
 ```
 
-## 高级算法
-
-### 中心性计算
+### 3. 连通性分析
 
 ```javascript
-// 度中心性
-let dc = cy.elements().degreeCentrality({
-  directed: true,
-});
+// 桥接边检测
+function detectBridges() {
+  const bridges = [];
+  cy.edges().forEach((edge) => {
+    const edgeData = edge.remove(); // 暂时移除边
 
-// 接近中心性
-let cc = cy.elements().closenessCentrality({
-  directed: true,
-  weight: function (edge) {
-    return edge.data("weight");
-  },
-});
+    if (cy.elements().components().length > 1) {
+      bridges.push(edge);
+    }
 
-// 介数中心性
-let bc = cy.elements().betweennessCentrality({
-  directed: true,
-  weight: function (edge) {
-    return edge.data("weight");
-  },
-});
+    cy.add(edgeData); // 恢复边
+  });
+
+  return bridges;
+}
+
+// 关节点检测
+function detectArticulationPoints() {
+  const points = [];
+  cy.nodes().forEach((node) => {
+    const nodeData = node.remove(); // 暂时移除节点
+
+    if (cy.elements().components().length > 1) {
+      points.push(node);
+    }
+
+    cy.add(nodeData); // 恢复节点
+  });
+
+  return points;
+}
 ```
 
-### 社区发现
+### 4. 社区发现
 
 ```javascript
-// k-核分解
-let kcore = cy.elements().kcore({
-  k: 2,
-  directed: false,
-});
+// k-means 聚类
+function kMeansClustering(k = 3) {
+  const positions = cy.nodes().map((node) => ({
+    id: node.id(),
+    x: node.position("x"),
+    y: node.position("y"),
+  }));
 
-// 模块度优化
-let clusters = cy.elements().modularity({
-  resolution: 1.0,
-});
+  // 初始化中心点
+  let centers = positions.slice(0, k).map((p) => ({ x: p.x, y: p.y }));
+  let clusters = {};
+
+  // 迭代优化
+  for (let i = 0; i < 10; i++) {
+    clusters = assignToClusters(positions, centers);
+    centers = updateCenters(clusters, positions);
+  }
+
+  return clusters;
+}
+
+// 可视化聚类结果
+function visualizeClusters(clusters) {
+  Object.entries(clusters).forEach(([clusterId, nodes]) => {
+    nodes.forEach((nodeId) => {
+      cy.$id(nodeId).addClass(`cluster-${clusterId}`);
+    });
+  });
+}
 ```
 
-## 完整示例
+## React 方式实现
 
-```html
-<!DOCTYPE html>
-<html lang="zh">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 图算法</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
-    <style>
-      #cy {
-        width: 600px;
-        height: 400px;
-        border: 1px solid #ccc;
-        margin: 20px auto;
-      }
-      .controls {
-        text-align: center;
-        margin: 10px;
-      }
-      button {
-        margin: 5px;
-        padding: 5px 10px;
-      }
-      #info {
-        margin: 10px;
-        padding: 10px;
-        border: 1px solid #ccc;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="controls">
-      <button onclick="findShortestPath()">查找最短路径</button>
-      <button onclick="analyzeCentrality()">中心性分析</button>
-      <button onclick="findCommunities()">社区发现</button>
-      <button onclick="resetGraph()">重置图形</button>
-    </div>
-    <div id="cy"></div>
-    <div id="info"></div>
-    <script>
-      const cy = cytoscape({
-        container: document.getElementById("cy"),
-        elements: [
-          // 节点
-          { data: { id: "a", label: "A" } },
-          { data: { id: "b", label: "B" } },
-          { data: { id: "c", label: "C" } },
-          { data: { id: "d", label: "D" } },
-          { data: { id: "e", label: "E" } },
-          // 边
-          { data: { id: "ab", source: "a", target: "b", weight: 2 } },
-          { data: { id: "bc", source: "b", target: "c", weight: 3 } },
-          { data: { id: "cd", source: "c", target: "d", weight: 1 } },
-          { data: { id: "de", source: "d", target: "e", weight: 4 } },
-          { data: { id: "ae", source: "a", target: "e", weight: 5 } },
-        ],
-        style: [
-          {
-            selector: "node",
-            style: {
-              "background-color": "#666",
-              label: "data(label)",
-              width: 30,
-              height: 30,
-            },
-          },
-          {
-            selector: "edge",
-            style: {
-              width: 2,
-              "line-color": "#999",
-              "curve-style": "bezier",
-              "target-arrow-shape": "triangle",
-              label: "data(weight)",
-            },
-          },
-          {
-            selector: ".highlighted",
-            style: {
-              "background-color": "#ff0000",
-              "line-color": "#ff0000",
-              "transition-property": "background-color, line-color",
-              "transition-duration": "0.3s",
-            },
-          },
-        ],
-        layout: {
-          name: "circle",
-        },
+### 1. 图算法组件
+
+```typescript
+interface GraphAlgorithmProps {
+  cy: cytoscape.Core;
+  onResult?: (result: any) => void;
+}
+
+// 最短路径组件
+export function ShortestPath({ cy, onResult }: GraphAlgorithmProps) {
+  const findPath = useCallback(
+    (source: string, target: string) => {
+      const path = cy.elements().dijkstra({
+        root: `#${source}`,
+        directed: false,
       });
 
-      // 查找最短路径
-      function findShortestPath() {
-        resetGraph();
-        const startNode = cy.$("#a");
-        const endNode = cy.$("#e");
+      const result = {
+        path: path.pathTo(`#${target}`),
+        distance: path.distanceTo(`#${target}`),
+      };
 
-        const dijkstra = cy.elements().dijkstra({
-          root: startNode,
-          directed: true,
-          weight: function (edge) {
-            return edge.data("weight");
-          },
-        });
+      onResult?.(result);
+    },
+    [cy, onResult]
+  );
 
-        const path = dijkstra.pathTo(endNode);
-        const distance = dijkstra.distanceTo(endNode);
+  return (
+    <div className="algorithm-controls">
+      <select onChange={(e) => setSource(e.target.value)}>
+        {cy.nodes().map((node) => (
+          <option key={node.id()} value={node.id()}>
+            {node.data("label")}
+          </option>
+        ))}
+      </select>
+      {/* 其他控制UI */}
+    </div>
+  );
+}
 
-        path.addClass("highlighted");
+// 中心性分析组件
+export function CentralityAnalysis({ cy, onResult }: GraphAlgorithmProps) {
+  const analyzeCentrality = useCallback(
+    (type: "pagerank" | "betweenness") => {
+      const result =
+        type === "pagerank"
+          ? cy.elements().pageRank()
+          : cy.elements().betweennessCentrality();
 
-        document.getElementById("info").innerHTML = `
-          <h3>最短路径分析</h3>
-          <p>从节点 ${startNode.data("label")} 到节点 ${endNode.data(
-          "label"
-        )}:</p>
-          <p>距离: ${distance}</p>
-          <p>路径: ${path
-            .nodes()
-            .map((n) => n.data("label"))
-            .join(" → ")}</p>
-        `;
-      }
+      onResult?.(result);
+    },
+    [cy, onResult]
+  );
 
-      // 中心性分析
-      function analyzeCentrality() {
-        resetGraph();
-
-        const bc = cy.elements().betweennessCentrality({
-          directed: true,
-          weight: function (edge) {
-            return edge.data("weight");
-          },
-        });
-
-        // 根据中心性值设置节点大小
-        cy.nodes().forEach((node) => {
-          const score = bc.betweenness(node);
-          node.style({
-            width: 30 + score * 20,
-            height: 30 + score * 20,
-          });
-        });
-
-        document.getElementById("info").innerHTML = `
-          <h3>中心性分析</h3>
-          ${cy
-            .nodes()
-            .map(
-              (node) => `
-            <p>节点 ${node.data("label")}: ${bc
-                .betweenness(node)
-                .toFixed(2)}</p>
-          `
-            )
-            .join("")}
-        `;
-      }
-
-      // 社区发现
-      function findCommunities() {
-        resetGraph();
-
-        const clusters = cy.elements().markovClustering({
-          attributes: [
-            function (edge) {
-              return edge.data("weight");
-            },
-          ],
-        });
-
-        // 为不同社区设置不同颜色
-        const colors = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#ff00ff"];
-        clusters.forEach((cluster, i) => {
-          cluster.forEach((ele) => {
-            ele.style("background-color", colors[i % colors.length]);
-          });
-        });
-
-        document.getElementById("info").innerHTML = `
-          <h3>社区发现</h3>
-          <p>发现 ${clusters.length} 个社区</p>
-          ${clusters
-            .map(
-              (cluster, i) => `
-            <p>社区 ${i + 1}: ${cluster
-                .nodes()
-                .map((n) => n.data("label"))
-                .join(", ")}</p>
-          `
-            )
-            .join("")}
-        `;
-      }
-
-      // 重置图形
-      function resetGraph() {
-        cy.elements().removeClass("highlighted");
-        cy.nodes().style({
-          width: 30,
-          height: 30,
-          "background-color": "#666",
-        });
-        cy.edges().style({
-          width: 2,
-          "line-color": "#999",
-        });
-        document.getElementById("info").innerHTML = "";
-      }
-    </script>
-  </body>
-</html>
+  return (
+    <div className="algorithm-controls">
+      <button onClick={() => analyzeCentrality("pagerank")}>
+        PageRank 分析
+      </button>
+      <button onClick={() => analyzeCentrality("betweenness")}>
+        中介中心性分析
+      </button>
+    </div>
+  );
+}
 ```
 
-## 算法应用最佳实践
+### 2. 使用示例
 
-1. **性能优化**
+```typescript
+export default function GraphAnalysis() {
+  const [results, setResults] = useState<any>(null);
 
-   - 选择合适的算法
-   - 优化数据结构
-   - 缓存计算结果
-   - 处理大规模数据
+  return (
+    <div className="graph-analysis">
+      <CytoscapeGraph
+        elements={graphData}
+        style={graphStyle}
+        onReady={(cy) => {
+          // 算法组件
+          return (
+            <>
+              <ShortestPath cy={cy} onResult={setResults} />
+              <CentralityAnalysis cy={cy} onResult={setResults} />
+              {/* 结果展示 */}
+              {results && (
+                <div className="results">{/* 格式化并展示结果 */}</div>
+              )}
+            </>
+          );
+        }}
+      />
+    </div>
+  );
+}
+```
 
-2. **可视化反馈**
+## 最佳实践
 
-   - 清晰的结果展示
-   - 交互式探索
-   - 动态更新
-   - 结果解释
+### 1. 性能优化
 
-3. **算法选择**
+- **算法选择**
 
-   - 考虑图的规模
-   - 评估时间复杂度
-   - 权衡精确度
-   - 适应具体需求
+  - 根据图的规模选择合适的算法
+  - 考虑时间和空间复杂度的平衡
+  - 对大规模图采用近似算法
 
-4. **数据处理**
+- **计算优化**
+  - 使用缓存避免重复计算
+  - 采用增量计算方式
+  - 利用 Web Worker 处理耗时操作
 
-   - 数据预处理
-   - 异常值处理
-   - 结果验证
-   - 数据更新
+### 2. 可视化反馈
 
-5. **交互设计**
+- **交互设计**
 
-   - 参数调整
-   - 结果筛选
-   - 实时反馈
-   - 操作撤销
+  - 提供算法执行进度反馈
+  - 使用动画展示算法步骤
+  - 支持暂停和继续操作
 
-6. **扩展性考虑**
-   - 算法组合
-   - 自定义算法
-   - 结果导出
-   - 接口设计
+- **结果展示**
+  - 高亮显示关键节点和路径
+  - 使用合适的视觉编码
+  - 提供详细的结果解释
+
+### 3. 代码组织
+
+- **模块化设计**
+
+  - 算法逻辑与视图逻辑分离
+  - 使用 TypeScript 类型保证代码安全
+  - 实现通用的算法接口
+
+- **错误处理**
+  - 合理处理边界情况
+  - 提供清晰的错误信息
+  - 支持优雅降级
+
+### 4. 扩展性考虑
+
+- **算法扩展**
+
+  - 支持自定义算法插件
+  - 提供算法组合机制
+  - 实现算法参数配置
+
+- **数据处理**
+  - 支持多种数据格式
+  - 提供数据预处理接口
+  - 实现结果导出功能

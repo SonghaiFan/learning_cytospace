@@ -1,339 +1,356 @@
-# 7.7 数据导出
+# 7. 数据导出与导入
 
-本章节将介绍如何在 Cytoscape.js 中实现数据导出功能，包括图形数据的导出、图像导出和状态保存等。
+本章节将介绍如何在 Cytoscape.js 中实现数据的导出和导入功能，包括图数据的序列化、反序列化，以及与其他格式的转换。每个功能都将提供传统方式和 React 方式两种实现。
 
-## 数据导出概述
+## 核心概念
 
-Cytoscape.js 提供了多种数据导出方式：
+### 数据格式
 
-- JSON 数据导出
-- 图像导出（PNG/JPG）
-- SVG 导出
-- 状态快照
+- **JSON 格式**: 节点和边的数据结构
+- **图形格式**: GraphML, GEXF 等标准格式
+- **图片格式**: PNG, JPEG, SVG 等可视化输出
 
-## 基础导出
+### 数据处理流程
 
-### JSON 数据导出
+1. **导出流程**
+
+   - 数据收集与过滤
+   - 格式转换
+   - 文件生成
+
+2. **导入流程**
+   - 文件解析
+   - 数据验证
+   - 图形重建
+
+## 传统方式实现
+
+### 1. JSON 数据处理
 
 ```javascript
-// 导出所有元素数据
-let jsonData = cy.json();
+// 导出为 JSON
+function exportToJson() {
+  const elements = cy.elements().map((ele) => ({
+    group: ele.isNode() ? "nodes" : "edges",
+    data: ele.data(),
+    position: ele.isNode() ? ele.position() : undefined,
+    selected: ele.selected(),
+    style: ele.style(),
+  }));
 
-// 导出选中元素数据
-let selectedData = cy.$(":selected").json();
+  const graphData = {
+    elements,
+    style: cy.style().json(),
+    layout: cy.layout().options,
+  };
 
-// 自定义数据导出
-let customData = {
-  nodes: cy.nodes().map((node) => ({
-    id: node.id(),
-    label: node.data("label"),
-    position: node.position(),
-  })),
-  edges: cy.edges().map((edge) => ({
-    source: edge.source().id(),
-    target: edge.target().id(),
-    label: edge.data("label"),
-  })),
-};
+  return JSON.stringify(graphData, null, 2);
+}
+
+// 从 JSON 导入
+function importFromJson(jsonString) {
+  const graphData = JSON.parse(jsonString);
+
+  cy.elements().remove(); // 清除现有元素
+  cy.add(graphData.elements);
+  cy.style(graphData.style);
+
+  // 应用布局
+  cy.layout(graphData.layout).run();
+
+  // 恢复选中状态
+  graphData.elements.forEach((ele) => {
+    if (ele.selected) {
+      cy.$id(ele.data.id).select();
+    }
+  });
+}
 ```
 
-### 图像导出
+### 2. 图片导出
 
 ```javascript
 // PNG 导出
-let png64 = cy.png({
-  scale: 2, // 导出图像的缩放比例
-  full: true, // 导出完整图形
-  quality: 1, // 图像质量
-});
-
-// JPG 导出
-let jpg64 = cy.jpg({
-  bg: "#ffffff", // 背景颜色
-  quality: 0.9, // 图像质量
-});
-```
-
-## 高级导出
-
-### SVG 导出
-
-```javascript
-// 导出为 SVG
-function exportSVG() {
-  let svgContent = cy.svg({
-    scale: 1,
+function exportToPng() {
+  const pngBlob = cy.png({
+    output: "blob",
+    bg: "#ffffff",
     full: true,
+    scale: 2,
+    maxWidth: 4000,
+    maxHeight: 4000,
+  });
+
+  return pngBlob;
+}
+
+// SVG 导出
+function exportToSvg() {
+  const svgStr = cy.svg({
+    full: true,
+    scale: 2,
     bg: "#ffffff",
   });
 
-  // 创建下载链接
-  let blob = new Blob([svgContent], {
-    type: "image/svg+xml;charset=utf-8",
-  });
-  let url = URL.createObjectURL(blob);
-  let link = document.createElement("a");
-  link.href = url;
-  link.download = "graph.svg";
-  link.click();
+  return svgStr;
 }
 ```
 
-### 状态快照
+### 3. 图形格式转换
 
 ```javascript
-// 保存当前状态
-function saveState() {
-  return {
-    elements: cy.json().elements,
-    layout: {
-      name: cy.layout().options.name,
-      options: cy.layout().options,
-    },
-    style: cy.style().json(),
-    zoom: cy.zoom(),
-    pan: cy.pan(),
-  };
-}
+// GraphML 导出
+function exportToGraphML() {
+  let graphml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+  graphml += '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">\n';
 
-// 恢复状态
-function restoreState(state) {
-  cy.elements().remove(); // 清除当前元素
-  cy.add(state.elements); // 添加保存的元素
-  cy.style(state.style); // 应用样式
-  cy.zoom(state.zoom); // 设置缩放
-  cy.pan(state.pan); // 设置平移
-  cy.layout(state.layout).run(); // 运行布局
+  // 添加数据属性定义
+  graphml +=
+    '<key id="label" for="node" attr.name="label" attr.type="string"/>\n';
+  graphml +=
+    '<key id="weight" for="edge" attr.name="weight" attr.type="double"/>\n';
+
+  // 添加图形数据
+  graphml += '<graph id="G" edgedefault="directed">\n';
+
+  // 添加节点
+  cy.nodes().forEach((node) => {
+    graphml += `<node id="${node.id()}">\n`;
+    graphml += `  <data key="label">${node.data("label")}</data>\n`;
+    graphml += "</node>\n";
+  });
+
+  // 添加边
+  cy.edges().forEach((edge) => {
+    graphml += `<edge source="${edge.source().id()}" target="${edge
+      .target()
+      .id()}">\n`;
+    graphml += `  <data key="weight">${edge.data("weight") || 1}</data>\n`;
+    graphml += "</edge>\n";
+  });
+
+  graphml += "</graph>\n</graphml>";
+  return graphml;
 }
 ```
 
-## 完整示例
+## React 方式实现
 
-```html
-<!DOCTYPE html>
-<html lang="zh">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 数据导出</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
-    <style>
-      #cy {
-        width: 600px;
-        height: 400px;
-        border: 1px solid #ccc;
-        margin: 20px auto;
-      }
-      .controls {
-        text-align: center;
-        margin: 10px;
-      }
-      button {
-        margin: 5px;
-        padding: 5px 10px;
-      }
-      #output {
-        margin: 10px;
-        padding: 10px;
-        border: 1px solid #ccc;
-        max-height: 200px;
-        overflow: auto;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="controls">
-      <button onclick="exportJSON()">导出 JSON</button>
-      <button onclick="exportPNG()">导出 PNG</button>
-      <button onclick="exportSVG()">导出 SVG</button>
-      <button onclick="saveSnapshot()">保存快照</button>
-      <button onclick="restoreSnapshot()">恢复快照</button>
-    </div>
-    <div id="cy"></div>
-    <div id="output"></div>
-    <script>
-      let lastSnapshot = null;
+### 1. 数据导出组件
 
-      const cy = cytoscape({
-        container: document.getElementById("cy"),
-        elements: [
-          // 节点
-          { data: { id: "a", label: "节点 A" } },
-          { data: { id: "b", label: "节点 B" } },
-          { data: { id: "c", label: "节点 C" } },
-          // 边
-          {
-            data: {
-              id: "ab",
-              source: "a",
-              target: "b",
-              label: "关系 AB",
-            },
-          },
-          {
-            data: {
-              id: "bc",
-              source: "b",
-              target: "c",
-              label: "关系 BC",
-            },
-          },
-        ],
-        style: [
-          {
-            selector: "node",
-            style: {
-              "background-color": "#666",
-              label: "data(label)",
-              width: 30,
-              height: 30,
-            },
-          },
-          {
-            selector: "edge",
-            style: {
-              width: 2,
-              "line-color": "#999",
-              "curve-style": "bezier",
-              "target-arrow-shape": "triangle",
-              label: "data(label)",
-            },
-          },
-        ],
-        layout: {
-          name: "grid",
-        },
-      });
+```typescript
+interface ExportOptions {
+  format: "json" | "png" | "svg" | "graphml";
+  filename?: string;
+}
 
-      // 导出 JSON
-      function exportJSON() {
-        const jsonData = cy.json();
-        const jsonString = JSON.stringify(jsonData, null, 2);
+export function ExportControls({ cy }: { cy: cytoscape.Core }) {
+  const handleExport = useCallback(
+    async (options: ExportOptions) => {
+      try {
+        let content: string | Blob;
+        let mimeType: string;
 
-        // 显示 JSON 数据
-        document.getElementById("output").innerHTML = `
-          <pre>${jsonString}</pre>
-        `;
-
-        // 创建下载链接
-        const blob = new Blob([jsonString], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "graph.json";
-        link.click();
-      }
-
-      // 导出 PNG
-      function exportPNG() {
-        const png64 = cy.png({
-          scale: 2,
-          full: true,
-          quality: 1,
-        });
-
-        // 创建下载链接
-        const link = document.createElement("a");
-        link.href = png64;
-        link.download = "graph.png";
-        link.click();
-      }
-
-      // 导出 SVG
-      function exportSVG() {
-        const svgContent = cy.svg({
-          scale: 1,
-          full: true,
-          bg: "#ffffff",
-        });
-
-        // 创建下载链接
-        const blob = new Blob([svgContent], {
-          type: "image/svg+xml;charset=utf-8",
-        });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "graph.svg";
-        link.click();
-      }
-
-      // 保存快照
-      function saveSnapshot() {
-        lastSnapshot = {
-          elements: cy.json().elements,
-          layout: {
-            name: cy.layout().options.name,
-            options: cy.layout().options,
-          },
-          style: cy.style().json(),
-          zoom: cy.zoom(),
-          pan: cy.pan(),
-        };
-
-        document.getElementById("output").innerHTML = "状态已保存";
-      }
-
-      // 恢复快照
-      function restoreSnapshot() {
-        if (!lastSnapshot) {
-          document.getElementById("output").innerHTML = "没有可用的快照";
-          return;
+        switch (options.format) {
+          case "json":
+            content = exportToJson();
+            mimeType = "application/json";
+            break;
+          case "png":
+            content = await cy.png({ output: "blob" });
+            mimeType = "image/png";
+            break;
+          case "svg":
+            content = cy.svg();
+            mimeType = "image/svg+xml";
+            break;
+          case "graphml":
+            content = exportToGraphML();
+            mimeType = "application/xml";
+            break;
         }
 
-        cy.elements().remove();
-        cy.add(lastSnapshot.elements);
-        cy.style(lastSnapshot.style);
-        cy.zoom(lastSnapshot.zoom);
-        cy.pan(lastSnapshot.pan);
-        cy.layout(lastSnapshot.layout).run();
-
-        document.getElementById("output").innerHTML = "状态已恢复";
+        // 创建下载链接
+        const blob =
+          content instanceof Blob
+            ? content
+            : new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = options.filename || `graph.${options.format}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Export failed:", error);
       }
-    </script>
-  </body>
-</html>
+    },
+    [cy]
+  );
+
+  return (
+    <div className="export-controls">
+      <button
+        onClick={() => handleExport({ format: "json", filename: "graph.json" })}
+      >
+        导出 JSON
+      </button>
+      <button
+        onClick={() => handleExport({ format: "png", filename: "graph.png" })}
+      >
+        导出 PNG
+      </button>
+      <button
+        onClick={() => handleExport({ format: "svg", filename: "graph.svg" })}
+      >
+        导出 SVG
+      </button>
+      <button
+        onClick={() =>
+          handleExport({ format: "graphml", filename: "graph.graphml" })
+        }
+      >
+        导出 GraphML
+      </button>
+    </div>
+  );
+}
 ```
 
-## 数据导出最佳实践
+### 2. 数据导入组件
 
-1. **数据格式**
+```typescript
+interface ImportOptions {
+  format: "json" | "graphml";
+}
 
-   - 选择合适的导出格式
-   - 保持数据结构清晰
-   - 包含必要的元数据
-   - 考虑兼容性
+export function ImportControls({
+  cy,
+  onImport,
+}: {
+  cy: cytoscape.Core;
+  onImport?: () => void;
+}) {
+  const handleFileSelect = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-2. **图像导出**
+      try {
+        const text = await file.text();
+        const format = file.name
+          .split(".")
+          .pop()
+          ?.toLowerCase() as ImportOptions["format"];
 
-   - 选择合适的分辨率
-   - 处理高 DPI 显示
-   - 优化文件大小
-   - 保持图像质量
+        switch (format) {
+          case "json":
+            importFromJson(text);
+            break;
+          case "graphml":
+            // 实现 GraphML 导入逻辑
+            break;
+        }
 
-3. **状态管理**
+        onImport?.();
+      } catch (error) {
+        console.error("Import failed:", error);
+      }
+    },
+    [cy, onImport]
+  );
 
-   - 完整的状态保存
-   - 可靠的恢复机制
-   - 版本控制支持
-   - 错误处理
+  return (
+    <div className="import-controls">
+      <input
+        type="file"
+        accept=".json,.graphml"
+        onChange={handleFileSelect}
+        className="hidden"
+        id="file-input"
+      />
+      <label htmlFor="file-input" className="button">
+        导入文件
+      </label>
+    </div>
+  );
+}
+```
 
-4. **性能优化**
+### 3. 使用示例
 
-   - 异步处理大数据
-   - 分批处理导出
-   - 内存管理
-   - 进度反馈
+```typescript
+export default function GraphIO() {
+  const [message, setMessage] = useState<string>("");
 
-5. **用户体验**
+  return (
+    <div className="graph-io">
+      <CytoscapeGraph
+        elements={graphData}
+        style={graphStyle}
+        onReady={(cy) => (
+          <div className="io-controls">
+            <ExportControls cy={cy} />
+            <ImportControls cy={cy} onImport={() => setMessage("导入成功！")} />
+            {message && <div className="message">{message}</div>}
+          </div>
+        )}
+      />
+    </div>
+  );
+}
+```
 
-   - 清晰的导出选项
-   - 导出进度提示
-   - 错误提示
-   - 预览功能
+## 最佳实践
 
-6. **安全考虑**
-   - 数据验证
-   - 敏感信息处理
-   - 文件大小限制
-   - 格式检查
+### 1. 数据处理
+
+- **数据验证**
+
+  - 检查数据完整性
+  - 验证数据格式
+  - 处理异常情况
+
+- **性能优化**
+  - 分批处理大型数据
+  - 使用流式处理
+  - 优化内存使用
+
+### 2. 用户体验
+
+- **交互设计**
+
+  - 提供进度反馈
+  - 支持拖放操作
+  - 预览导入结果
+
+- **错误处理**
+  - 友好的错误提示
+  - 提供回滚机制
+  - 数据恢复选项
+
+### 3. 格式支持
+
+- **标准格式**
+
+  - 支持常用图形格式
+  - 保持格式兼容性
+  - 提供格式转换
+
+- **自定义格式**
+  - 定义清晰的格式规范
+  - 提供格式验证工具
+  - 支持扩展性
+
+### 4. 安全性
+
+- **数据安全**
+
+  - 敏感数据处理
+  - 文件大小限制
+  - 格式检查
+
+- **错误恢复**
+  - 自动备份
+  - 版本控制
+  - 导入回滚

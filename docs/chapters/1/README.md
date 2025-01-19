@@ -1,5 +1,7 @@
 # 1. 环境搭建与初始化
 
+> [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/1-环境搭建与初始化) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
+
 本章节将介绍两种使用 Cytoscape.js 的方式：
 
 1. 传统方式：使用纯 HTML 和 JavaScript

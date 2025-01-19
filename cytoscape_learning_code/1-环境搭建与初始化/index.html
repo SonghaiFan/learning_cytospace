@@ -3,11 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 环境搭建与初始化</title>
+    <title>Cytoscape.js - 传统方式实现</title>
     <!-- 从 CDN 加载 Cytoscape.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
-      /* 图形容器样式 - 必须设置宽高 */
       #cy {
         width: 600px;
         height: 400px;
@@ -22,51 +21,33 @@
   </head>
   <body>
     <div class="controls">
-      <h1>Cytoscape.js 初始化示例</h1>
+      <h1>Cytoscape.js 传统实现示例</h1>
     </div>
-    <!-- 图形容器 -->
     <div id="cy"></div>
     <script>
-      // 初始化 Cytoscape 实例
       const cy = cytoscape({
-        // 指定容器元素
         container: document.getElementById("cy"),
-
-        // 初始元素集合为空
         elements: [],
-
-        // 样式定义
         style: [
           {
-            // 节点选择器
             selector: "node",
-            // 节点样式
             style: {
               "background-color": "#666",
-              label: "data(id)", // 使用节点的 id 作为标签
+              label: "data(id)",
             },
           },
           {
-            // 边选择器
             selector: "edge",
-            // 边样式
             style: {
               width: 2,
               "line-color": "#999",
             },
           },
         ],
-
-        // 布局配置
         layout: {
-          name: "grid", // 使用网格布局
-          // 其他布局参数可以在这里配置
+          name: "grid",
         },
       });
-
-      // 此时图形为空，可以通过 cy.add() 添加元素
-      // 可以通过 cy.style() 修改样式
-      // 可以通过 cy.layout() 更改布局
     </script>
   </body>
 </html>
