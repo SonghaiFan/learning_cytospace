@@ -1,94 +1,68 @@
-# Cytoscape.js 学习教程
+# 松海范 Cytoscape.js 学习项目
 
-这是一个关于 Cytoscape.js 的综合学习教程，包含理论知识和实践示例。
+> 一个全面的 Cytoscape.js 中文教程，包含教程文档和配套示例代码。
 
 ## 项目结构
 
 ```
 .
-├── docs/                   # 文档目录
-│   ├── index.html         # 文档主页
-│   ├── README.md          # 文档说明
-│   ├── _sidebar.md        # 侧边栏配置
-│   └── chapters/          # 章节文档
-│       ├── 1/             # 第1章：环境搭建与初始化
-│       ├── 2/             # 第2章：节点与边的基础操作
-│       ├── 3/             # 第3章：布局与视图控制
-│       ├── 4/             # 第4章：样式与动画
-│       ├── 5/             # 第5章：交互与事件处理
-│       ├── 6/             # 第6章：图算法与分析
-│       └── 7/             # 第7章：高级特性
-│
-└── cytoscape_learning_code/  # 示例代码目录
-    ├── 1-环境搭建与初始化/
-    ├── 2-节点与边的基础操作/
-    ├── 3-布局与视图控制/
-    ├── 4-样式与动画/
-    ├── 5-交互与事件处理/
-    ├── 6-图算法与分析/
-    └── 7-高级特性/
-
+├── README.md                     # 项目说明文档
+├── cytoscape_learning_code/      # 示例代码目录
+│   ├── 1-环境搭建与初始化/       # 第1章：环境配置与基础概念
+│   ├── 2-节点与边的基础操作/     # 第2章：图元素操作
+│   ├── 3-布局与视图控制/         # 第3章：布局算法与视图
+│   ├── 4-样式与动画/            # 第4章：样式设置与动画效果
+│   ├── 5-交互与事件处理/         # 第5章：交互功能实现
+│   ├── 6-图算法与分析/          # 第6章：图分析算法
+│   ├── 7-数据导入导出/          # 第7章：数据处理
+│   └── README.md                # 示例代码说明
+└── docs/                        # 教程文档目录
+    ├── README.md                # 文档首页
+    ├── _coverpage.md           # 文档封面
+    ├── _sidebar.md             # 文档侧边栏
+    ├── chapters/               # 章节内容
+    └── index.html              # 文档入口
 ```
+
+## 在线文档
+
+访问 [在线文档](https://songhaifan.github.io/learning_cytospace) 开始学习。
+
+## 示例代码
+
+每个章节都提供了完整的示例代码，可以直接在浏览器中运行：
+
+1. [环境搭建与初始化](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
+2. [节点与边的基础操作](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-节点与边的基础操作/index.html)
+3. [布局与视图控制](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-布局与视图控制/index.html)
+4. [样式与动画](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-样式与动画/index.html)
+5. [交互与事件处理](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-交互与事件处理/index.html)
+6. [图算法与分析](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-图算法与分析/index.html)
+7. [数据导入导出](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-数据导入导出/index.html)
 
 ## 使用说明
 
-1. 文档浏览
+1. 文档阅读
 
-   - 进入 `docs` 目录
-   - 运行 `docsify serve` 启动文档服务器
-   - 访问 `http://localhost:3000` 查看文档
+   - 访问在线文档
+   - 按章节顺序学习
+   - 结合示例理解概念
 
-2. 示例代码
-   - 示例代码位于 `cytoscape_learning_code` 目录
-   - 每个章节对应一个子目录
-   - 直接在浏览器中打开 HTML 文件即可运行示例
+2. 代码运行
 
-## 文档结构
+   - 直接在浏览器中打开示例链接
+   - 查看源代码了解实现细节
+   - 修改参数观察效果变化
 
-### 第 1 章：环境搭建与初始化
+3. 开发环境
+   - 现代浏览器（Chrome、Firefox、Safari、Edge 等）
+   - 支持 ES6+ 语法
+   - 网络连接（用于加载 CDN 资源）
 
-- 开发环境配置
-- Cytoscape.js 安装
-- 基本概念和架构
+## 作者
 
-### 第 2 章：节点与边的基础操作
+SONGHAI FAN
 
-- 节点的创建和管理
-- 边的创建和管理
-- 元素选择器
-- 数据模型
+## 最后更新
 
-### 第 3 章：布局与视图控制
-
-- 内置布局算法
-- 布局配置和优化
-- 视图缩放和平移
-- 布局扩展使用
-
-### 第 4 章：样式与动画
-
-- 样式系统基础
-- 动态样式控制
-- 动画系统
-- 过渡效果
-
-### 第 5 章：交互与事件处理
-
-- 事件系统
-- 用户交互处理
-- 工具提示
-- 上下文菜单
-
-### 第 6 章：图算法与分析
-
-- 路径查找
-- 连通性分析
-- 中心性计算
-- 社区发现
-
-### 第 7 章：高级特性
-
-- 复合节点
-- 数据导出
-- 性能优化
-- 扩展开发
+2024 年 1 月
