@@ -1,30 +1,42 @@
 # 3. 布局与视图控制
 
-本章节将介绍如何在 Cytoscape.js 中控制图形布局和视图，包括各种布局算法的使用、视图操作和动画效果。每个功能都将提供传统方式和 React 方式两种实现。
+> [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/3-布局与视图控制) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-布局与视图控制/index.html)
 
-## 核心概念
+本章节将介绍 Cytoscape.js 中的布局系统和视图控制功能。每个功能都将提供传统方式和 React 方式两种实现。
 
-### 布局（Layout）
+## 布局系统概述
 
-- 自动排列节点位置的算法
-- 包括网格、圆形、力导向等多种布局
-- 可配置动画和其他参数
+布局是图可视化中的核心功能之一。一个好的布局可以帮助用户更好地理解数据之间的关系。Cytoscape.js 提供了丰富的布局选项。
 
-### 视图控制（View Control）
+### 布局的分类
 
-- 缩放（Zoom）操作
-- 平移（Pan）操作
-- 居中和适配（Center & Fit）
+1. 离散布局 (Discrete Layouts)
 
-## 布局算法
+   - 一次性设置所有节点位置
+   - 通常基于几何模式组织节点
+   - 执行速度快，计算成本低
+   - 示例：grid, circle, concentric
 
-Cytoscape.js 提供了多种内置布局算法：
+2. 连续布局 (Continuous Layouts)
+   - 通过多次迭代设置节点位置
+   - 通常基于力导向算法
+   - 可以产生更自然的布局效果
+   - 示例：cose, cola, fcose
 
-- `grid`: 网格布局
-- `circle`: 圆形布局
-- `concentric`: 同心圆布局
-- `breadthfirst`: 层次布局（广度优先）
-- `random`: 随机布局
+### 布局的同步性
+
+1. 同步布局
+
+   - 离散布局默认是同步的
+   - 布局完成后可以立即访问节点位置
+   - 适合需要立即获取结果的场景
+
+2. 异步布局
+   - 连续布局默认是异步的
+   - 需要使用事件或 Promise 来处理布局完成
+   - 适合复杂布局和动画效果
+
+## 内置布局实现
 
 ### 传统方式实现
 
@@ -33,68 +45,50 @@ Cytoscape.js 提供了多种内置布局算法：
 <html lang="zh">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - 布局与视图控制</title>
+    <title>Cytoscape.js 布局示例</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
       #cy {
         width: 600px;
         height: 400px;
         border: 1px solid #ccc;
-        margin: 20px auto;
       }
       .controls {
+        margin: 10px;
         text-align: center;
-        margin: 20px;
-      }
-      button {
-        margin: 5px;
-        padding: 5px 10px;
       }
     </style>
   </head>
   <body>
     <div class="controls">
-      <h1>布局与视图控制示例</h1>
-      <div>
-        <h3>布局控制</h3>
-        <button onclick="changeLayout('grid')">网格布局</button>
-        <button onclick="changeLayout('circle')">圆形布局</button>
-        <button onclick="changeLayout('concentric')">同心圆布局</button>
-        <button onclick="changeLayout('breadthfirst')">层次布局</button>
-      </div>
-      <div>
-        <h3>视图控制</h3>
-        <button onclick="zoomIn()">放大</button>
-        <button onclick="zoomOut()">缩小</button>
-        <button onclick="fitView()">适配视图</button>
-        <button onclick="centerView()">居中视图</button>
-      </div>
+      <button onclick="changeLayout('grid')">网格布局</button>
+      <button onclick="changeLayout('circle')">圆形布局</button>
+      <button onclick="changeLayout('concentric')">同心圆布局</button>
+      <button onclick="changeLayout('cose')">力导向布局</button>
     </div>
     <div id="cy"></div>
     <script>
+      // 初始化图实例
       const cy = cytoscape({
         container: document.getElementById("cy"),
         elements: [
           // 节点
-          { data: { id: "a", label: "节点 A" } },
-          { data: { id: "b", label: "节点 B" } },
-          { data: { id: "c", label: "节点 C" } },
-          { data: { id: "d", label: "节点 D" } },
-          { data: { id: "e", label: "节点 E" } },
+          { data: { id: "a" } },
+          { data: { id: "b" } },
+          { data: { id: "c" } },
+          { data: { id: "d" } },
           // 边
           { data: { id: "ab", source: "a", target: "b" } },
           { data: { id: "bc", source: "b", target: "c" } },
           { data: { id: "cd", source: "c", target: "d" } },
-          { data: { id: "de", source: "d", target: "e" } },
-          { data: { id: "ea", source: "e", target: "a" } },
+          { data: { id: "da", source: "d", target: "a" } },
         ],
         style: [
           {
             selector: "node",
             style: {
               "background-color": "#666",
-              label: "data(label)",
+              label: "data(id)",
             },
           },
           {
@@ -103,66 +97,48 @@ Cytoscape.js 提供了多种内置布局算法：
               width: 2,
               "line-color": "#999",
               "curve-style": "bezier",
-              "target-arrow-shape": "triangle",
             },
           },
         ],
-        layout: { name: "grid" },
       });
 
-      // 布局控制
-      function changeLayout(name) {
-        const layout = cy.layout({
-          name,
+      // 布局配置
+      const layoutConfigs = {
+        grid: {
+          name: "grid",
+          rows: 2,
           animate: true,
-          animationDuration: 500,
+        },
+        circle: {
+          name: "circle",
+          animate: true,
+        },
+        concentric: {
+          name: "concentric",
+          minNodeSpacing: 50,
+          animate: true,
+        },
+        cose: {
+          name: "cose",
+          animate: "end",
+          randomize: false,
+          componentSpacing: 40,
+          nodeOverlap: 20,
+          refresh: 20,
+          fit: true,
           padding: 30,
-          // 同心圆布局特定配置
-          concentric: function (node) {
-            return node.degree();
-          },
-          levelWidth: function () {
-            return 2;
-          },
-          // 层次布局特定配置
-          directed: true,
-        });
+          infinite: false,
+        },
+      };
+
+      // 切换布局函数
+      function changeLayout(name) {
+        const layout = cy.layout(layoutConfigs[name]);
         layout.run();
       }
 
-      // 视图控制
-      function zoomIn() {
-        cy.animate({
-          zoom: cy.zoom() * 1.2,
-          duration: 500,
-        });
-      }
-
-      function zoomOut() {
-        cy.animate({
-          zoom: cy.zoom() * 0.8,
-          duration: 500,
-        });
-      }
-
-      function fitView() {
-        cy.animate({
-          fit: {
-            eles: cy.elements(),
-            padding: 50,
-          },
-          duration: 500,
-        });
-      }
-
-      function centerView() {
-        cy.animate({
-          center: {
-            eles: cy.elements(),
-          },
-          duration: 500,
-        });
-      }
+      // 初始布局
+      changeLayout("grid");
     </script>
   </body>
 </html>
@@ -170,12 +146,13 @@ Cytoscape.js 提供了多种内置布局算法：
 
 ### React 方式实现
 
-1. 扩展布局组件 (`src/components/CytoscapeGraph.tsx`):
+1. 更新 `CytoscapeGraph` 组件以支持布局切换：
 
 ```typescript
+// src/components/CytoscapeGraph.tsx
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import cytoscape from "cytoscape";
 
 interface CytoscapeGraphProps {
@@ -196,7 +173,6 @@ export function CytoscapeGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const cyRef = useRef<cytoscape.Core | null>(null);
 
-  // 初始化
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -219,7 +195,6 @@ export function CytoscapeGraph({
     };
   }, []);
 
-  // 更新元素
   useEffect(() => {
     if (!cyRef.current) return;
     cyRef.current.elements().remove();
@@ -227,55 +202,10 @@ export function CytoscapeGraph({
     cyRef.current.layout(layout).run();
   }, [elements, layout]);
 
-  // 更新样式
   useEffect(() => {
     if (!cyRef.current) return;
     cyRef.current.style(style);
   }, [style]);
-
-  // 布局控制
-  const runLayout = useCallback((layoutOptions: cytoscape.LayoutOptions) => {
-    if (!cyRef.current) return;
-    cyRef.current.layout(layoutOptions).run();
-  }, []);
-
-  // 视图控制
-  const zoomIn = useCallback(() => {
-    if (!cyRef.current) return;
-    cyRef.current.animate({
-      zoom: cyRef.current.zoom() * 1.2,
-      duration: 500,
-    });
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    if (!cyRef.current) return;
-    cyRef.current.animate({
-      zoom: cyRef.current.zoom() * 0.8,
-      duration: 500,
-    });
-  }, []);
-
-  const fitView = useCallback(() => {
-    if (!cyRef.current) return;
-    cyRef.current.animate({
-      fit: {
-        eles: cyRef.current.elements(),
-        padding: 50,
-      },
-      duration: 500,
-    });
-  }, []);
-
-  const centerView = useCallback(() => {
-    if (!cyRef.current) return;
-    cyRef.current.animate({
-      center: {
-        eles: cyRef.current.elements(),
-      },
-      duration: 500,
-    });
-  }, []);
 
   return (
     <div
@@ -286,39 +216,40 @@ export function CytoscapeGraph({
 }
 ```
 
-2. 使用组件 (`src/app/page.tsx`):
+2. 创建布局演示页面：
 
 ```typescript
+// src/app/layouts/page.tsx
 "use client";
 
 import { useState } from "react";
 import { CytoscapeGraph } from "@/components/CytoscapeGraph";
-import type { ElementDefinition, LayoutOptions } from "cytoscape";
+import type { LayoutOptions } from "cytoscape";
 
-export default function Home() {
-  const [elements] = useState<ElementDefinition[]>([
+export default function LayoutsDemo() {
+  const [currentLayout, setCurrentLayout] = useState<LayoutOptions>({
+    name: "grid",
+  });
+
+  const elements = [
     // 节点
-    { data: { id: "a", label: "节点 A" } },
-    { data: { id: "b", label: "节点 B" } },
-    { data: { id: "c", label: "节点 C" } },
-    { data: { id: "d", label: "节点 D" } },
-    { data: { id: "e", label: "节点 E" } },
+    { data: { id: "a" } },
+    { data: { id: "b" } },
+    { data: { id: "c" } },
+    { data: { id: "d" } },
     // 边
     { data: { id: "ab", source: "a", target: "b" } },
     { data: { id: "bc", source: "b", target: "c" } },
     { data: { id: "cd", source: "c", target: "d" } },
-    { data: { id: "de", source: "d", target: "e" } },
-    { data: { id: "ea", source: "e", target: "a" } },
-  ]);
-
-  const [layout, setLayout] = useState<LayoutOptions>({ name: "grid" });
+    { data: { id: "da", source: "d", target: "a" } },
+  ];
 
   const style = [
     {
       selector: "node",
       style: {
         "background-color": "#666",
-        label: "data(label)",
+        label: "data(id)",
       },
     },
     {
@@ -327,241 +258,256 @@ export default function Home() {
         width: 2,
         "line-color": "#999",
         "curve-style": "bezier",
-        "target-arrow-shape": "triangle",
       },
     },
   ];
 
-  // 布局配置
   const layouts = {
-    grid: { name: "grid", animate: true, padding: 30 },
-    circle: { name: "circle", animate: true, padding: 30 },
+    grid: {
+      name: "grid",
+      rows: 2,
+      animate: true,
+    },
+    circle: {
+      name: "circle",
+      animate: true,
+    },
     concentric: {
       name: "concentric",
+      minNodeSpacing: 50,
       animate: true,
-      padding: 30,
-      concentric: (node: any) => node.degree(),
-      levelWidth: () => 2,
     },
-    breadthfirst: {
-      name: "breadthfirst",
-      animate: true,
+    cose: {
+      name: "cose",
+      animate: "end",
+      randomize: false,
+      componentSpacing: 40,
+      nodeOverlap: 20,
+      refresh: 20,
+      fit: true,
       padding: 30,
-      directed: true,
+      infinite: false,
     },
   };
 
-  let cyRef: cytoscape.Core | null = null;
-
   return (
     <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">布局与视图控制示例</h1>
+      <h1 className="text-2xl font-bold mb-4">Cytoscape.js 布局示例</h1>
 
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">布局控制</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setLayout(layouts.grid)}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            网格布局
-          </button>
-          <button
-            onClick={() => setLayout(layouts.circle)}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            圆形布局
-          </button>
-          <button
-            onClick={() => setLayout(layouts.concentric)}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-          >
-            同心圆布局
-          </button>
-          <button
-            onClick={() => setLayout(layouts.breadthfirst)}
-            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            层次布局
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold mb-2">视图控制</h3>
-        <div className="flex gap-2">
-          <button
-            onClick={() => cyRef?.animate({ zoom: cyRef.zoom() * 1.2 })}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            放大
-          </button>
-          <button
-            onClick={() => cyRef?.animate({ zoom: cyRef.zoom() * 0.8 })}
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            缩小
-          </button>
-          <button
-            onClick={() => cyRef?.animate({ fit: { padding: 50 } })}
-            className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
-          >
-            适配视图
-          </button>
-          <button
-            onClick={() => cyRef?.animate({ center: true })}
-            className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            居中视图
-          </button>
-        </div>
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setCurrentLayout(layouts.grid)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          网格布局
+        </button>
+        <button
+          onClick={() => setCurrentLayout(layouts.circle)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          圆形布局
+        </button>
+        <button
+          onClick={() => setCurrentLayout(layouts.concentric)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          同心圆布局
+        </button>
+        <button
+          onClick={() => setCurrentLayout(layouts.cose)}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          力导向布局
+        </button>
       </div>
 
       <CytoscapeGraph
         elements={elements}
         style={style}
-        layout={layout}
-        onReady={(cy) => {
-          cyRef = cy;
-        }}
+        layout={currentLayout}
       />
     </main>
   );
 }
 ```
 
-## 布局配置说明
+## 布局配置详解
 
 ### 通用配置选项
 
 所有布局都支持以下基本配置：
 
-```javascript
-const layoutOptions = {
-  name: "grid", // 布局算法名称
-  animate: true, // 是否使用动画
-  animationDuration: 500, // 动画持续时间
-  padding: 30, // 布局边距
-  fit: true, // 是否适配视图
-  spacingFactor: 1.5, // 间距因子
-  ready: function () {}, // 布局准备就绪的回调
-  stop: function () {}, // 布局完成的回调
-};
-```
-
-### 特定布局配置
-
-#### 网格布局 (grid)
-
-```javascript
-{
-  name: 'grid',
-  rows: undefined,    // 自动计算行数
-  cols: undefined     // 自动计算列数
+```typescript
+interface BaseLayoutOptions {
+  // 是否动画过渡
+  animate?: boolean | "end";
+  // 动画时长(ms)
+  animationDuration?: number;
+  // 是否自适应容器
+  fit?: boolean;
+  // 容器边距
+  padding?: number;
+  // 是否无限运行
+  infinite?: boolean;
 }
 ```
 
-#### 圆形布局 (circle)
+### 常用布局配置
 
-```javascript
+1. 网格布局 (Grid)
+
+```typescript
 {
-  name: 'circle',
-  radius: undefined   // 自动计算半径
+  name: "grid",
+  rows?: number,     // 行数
+  cols?: number,     // 列数
+  position?: Function // 自定义位置函数
 }
 ```
 
-#### 同心圆布局 (concentric)
+2. 圆形布局 (Circle)
 
-```javascript
+```typescript
 {
-  name: 'concentric',
-  concentric: function(node) {
-    // 根据节点的度来决定同心圆的层级
-    return node.degree();
-  },
-  levelWidth: function(nodes) {
-    // 每层节点的间距
-    return 2;
-  }
+  name: "circle",
+  radius?: number,    // 半径
+  startAngle?: number // 起始角度
 }
 ```
 
-#### 层次布局 (breadthfirst)
+3. 同心圆布局 (Concentric)
 
-```javascript
+```typescript
 {
-  name: 'breadthfirst',
-  directed: true,     // 是否考虑边的方向
-  roots: undefined    // 自动选择根节点
+  name: "concentric",
+  minNodeSpacing?: number,     // 最小节点间距
+  concentric?: Function,       // 计算同心值的函数
+  levelWidth?: Function,       // 计算每层宽度的函数
+  sweep?: number,             // 扫描角度
+  clockwise?: boolean         // 是否顺时针
 }
 ```
 
-## 视图操作
+4. 力导向布局 (COSE)
 
-### 缩放操作
-
-```javascript
-// 传统方式
-cy.zoom(2.0); // 设置缩放级别
-cy.zoom() * 1.2; // 放大
-cy.zoom() * 0.8; // 缩小
-
-// React 方式
-cyRef.current?.zoom(2.0);
-cyRef.current?.animate({ zoom: cyRef.current.zoom() * 1.2 });
+```typescript
+{
+  name: "cose",
+  // 物理模拟参数
+  nodeRepulsion?: number,     // 节点斥力
+  nodeOverlap?: number,       // 节点重叠
+  idealEdgeLength?: number,   // 理想边长
+  edgeElasticity?: number,    // 边弹性
+  nestingFactor?: number,     // 嵌套因子
+  gravity?: number,           // 重力
+  // 迭代参数
+  numIter?: number,          // 迭代次数
+  initialTemp?: number,      // 初始温度
+  coolingFactor?: number,    // 冷却因子
+  minTemp?: number          // 最小温度
+}
 ```
 
-### 平移操作
+## 视图控制
 
-```javascript
-// 传统方式
-cy.pan({ x: 100, y: 100 }); // 设置平移位置
-cy.panBy({ x: 10, y: 10 }); // 相对平移
+### 常用视图操作
 
-// React 方式
-cyRef.current?.pan({ x: 100, y: 100 });
-cyRef.current?.animate({ pan: { x: 100, y: 100 } });
+1. 缩放控制
+
+```typescript
+// 放大/缩小
+cy.zoom({
+  level: 2.0, // 缩放级别
+  position: { x: 100, y: 100 }, // 缩放中心
+});
+
+// 自适应内容
+cy.fit();
+
+// 获取当前缩放级别
+const currentZoom = cy.zoom();
 ```
 
-### 视图适配
+2. 平移控制
 
-```javascript
-// 传统方式
-cy.fit(); // 适配所有元素
-cy.fit(cy.$(":selected")); // 适配选中元素
+```typescript
+// 平移到指定位置
+cy.pan({
+  x: 100,
+  y: 100,
+});
 
-// React 方式
-cyRef.current?.animate({ fit: { padding: 50 } });
-cyRef.current?.animate({ fit: { eles: cyRef.current.$(":selected") } });
+// 获取当前平移位置
+const currentPan = cy.pan();
+```
+
+3. 居中操作
+
+```typescript
+// 居中显示所有元素
+cy.center();
+
+// 居中显示特定元素
+cy.center(cy.$("#someNode"));
+```
+
+### 视图事件处理
+
+```typescript
+// 监听缩放事件
+cy.on("zoom", function (evt) {
+  console.log("当前缩放级别:", evt.target.zoom());
+});
+
+// 监听平移事件
+cy.on("pan", function (evt) {
+  console.log("当前平移位置:", evt.target.pan());
+});
 ```
 
 ## 最佳实践
 
-1. **布局选择**
+1. 布局选择
 
-   - 根据数据结构选择合适的布局
-   - 考虑性能和可读性的平衡
-   - 为不同场景提供布局切换
+   - 小型图（<100 个节点）：使用 grid 或 circle 布局
+   - 中型图（100-1000 个节点）：使用 cose 布局
+   - 大型图（>1000 个节点）：使用 fcose 布局或分层显示
 
-2. **动画效果**
+2. 性能优化
 
-   - 使用适当的动画持续时间
-   - 避免频繁的布局变化
-   - 提供流畅的过渡效果
+   - 使用异步布局避免阻塞 UI
+   - 大型图谱考虑分批布局
+   - 适当使用 infinite: false 避免持续计算
 
-3. **视图控制**
+3. 用户体验
 
-   - 提供直观的缩放和平移控制
-   - 实现自适应视图
-   - 保持视图状态的连续性
+   - 添加布局过渡动画
+   - 提供布局切换控制
+   - 保持视图操作的流畅性
 
-4. **性能优化**
+4. 代码组织
+   - 将布局配置抽离为配置文件
+   - 使用 TypeScript 类型定义
+   - 实现布局状态管理
 
-   - 大型图形考虑关闭动画
-   - 使用节流控制视图操作
-   - 避免不必要的布局计算
+## 扩展布局
 
-5. **React 特定建议**
-   - 使用 useCallback 优化事件处理
-   - 合理控制重渲染
-   - 维护视图状态的一致性
+除了内置布局外，Cytoscape.js 还提供了多个扩展布局：
+
+1. `cytoscape-cola`: 约束布局
+2. `cytoscape-dagre`: 层次化布局
+3. `cytoscape-klay`: 复杂图布局
+4. `cytoscape-euler`: 快速力导向布局
+
+安装和使用扩展布局：
+
+```typescript
+import cola from "cytoscape-cola";
+cytoscape.use(cola);
+
+// 使用 cola 布局
+cy.layout({
+  name: "cola",
+  maxSimulationTime: 3000,
+}).run();
+```

@@ -1,5 +1,7 @@
 # 2. 节点与边的基础操作
 
+> [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/2-节点与边的基础操作) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-节点与边的基础操作/index.html)
+
 本章节将介绍如何在 Cytoscape.js 中进行节点和边的基本操作，包括添加、删除、修改和查询等功能。每个功能都将提供传统方式和 React 方式两种实现。
 
 ## 核心概念
