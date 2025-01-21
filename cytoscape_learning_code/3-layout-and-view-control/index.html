@@ -159,11 +159,10 @@
         cola(cytoscape);
       });
       */
-
       const cy = cytoscape({
         container: document.getElementById("cy"),
         elements: [
-          // Cluster 1: Circular Structure (Suitable for CiSE layout)
+          // Cluster 1: Ring structure (suitable for CiSE layout)
           { data: { id: "a1", label: "A1", group: "cluster1" } },
           { data: { id: "a2", label: "A2", group: "cluster1" } },
           { data: { id: "a3", label: "A3", group: "cluster1" } },
@@ -185,7 +184,7 @@
             data: { id: "a5a1", source: "a5", target: "a1", group: "cluster1" },
           },
 
-          // Cluster 2: Star Structure (Suitable for CoSE and FCose layouts)
+          // Cluster 2: Star structure (suitable for CoSE and FCose layouts)
           { data: { id: "b1", label: "B1", group: "cluster2" } },
           { data: { id: "b2", label: "B2", group: "cluster2" } },
           { data: { id: "b3", label: "B3", group: "cluster2" } },
@@ -208,7 +207,7 @@
             data: { id: "b1b6", source: "b1", target: "b6", group: "cluster2" },
           },
 
-          // Cluster 3: Hierarchical Structure (Suitable for Dagre and ELK layouts)
+          // Cluster 3: Hierarchical structure (suitable for Dagre and ELK layouts)
           { data: { id: "c1", label: "C1", group: "cluster3" } },
           { data: { id: "c2", label: "C2", group: "cluster3" } },
           { data: { id: "c3", label: "C3", group: "cluster3" } },
@@ -235,7 +234,7 @@
             data: { id: "c3c7", source: "c3", target: "c7", group: "cluster3" },
           },
 
-          // Inter-cluster connections (Demonstrates layout handling of large graphs)
+          // Inter-cluster connections (demonstrates layout handling of large-scale graphs)
           {
             data: {
               id: "a1b1",
@@ -252,6 +251,14 @@
               group: "intercluster",
             },
           },
+          {
+            data: {
+              id: "a3c3",
+              source: "a3",
+              target: "c3",
+              group: "intercluster",
+            },
+          },
         ],
         style: [
           {
@@ -259,10 +266,9 @@
             style: {
               "background-color": "#666",
               label: "data(label)",
+              "font-size": "12px",
               "text-valign": "center",
               "text-halign": "center",
-              width: 40,
-              height: 40,
             },
           },
           {
@@ -274,85 +280,258 @@
               "target-arrow-shape": "triangle",
             },
           },
+
+          // Add different styles for different clusters
+          {
+            selector: "node[group='cluster1']",
+            style: {
+              "background-color": "#4CAF50",
+            },
+          },
+          {
+            selector: "node[group='cluster2']",
+            style: {
+              "background-color": "#2196F3",
+            },
+          },
+          {
+            selector: "node[group='cluster3']",
+            style: {
+              "background-color": "#FFC107",
+            },
+          },
+          {
+            selector: "edge[group='cluster1']",
+            style: {
+              "line-color": "#4CAF50",
+              "target-arrow-color": "#4CAF50",
+            },
+          },
+          {
+            selector: "edge[group='cluster2']",
+            style: {
+              "line-color": "#2196F3",
+              "target-arrow-color": "#2196F3",
+            },
+          },
+          {
+            selector: "edge[group='cluster3']",
+            style: {
+              "line-color": "#FFC107",
+              "target-arrow-color": "#FFC107",
+            },
+          },
+          {
+            selector: "edge[group='intercluster']",
+            style: {
+              "line-color": "#9C27B0",
+              "target-arrow-color": "#9C27B0",
+              "line-style": "dashed",
+            },
+          },
+          // Selected element styles (placed last to prevent style override)
           {
             selector: ":selected",
             style: {
-              "background-color": "#900",
-              "line-color": "#900",
-              "target-arrow-color": "#900",
-            },
-          },
-          {
-            selector: '[group="cluster1"]',
-            style: {
-              "background-color": "#e74c3c",
-              "line-color": "#c0392b",
-            },
-          },
-          {
-            selector: '[group="cluster2"]',
-            style: {
-              "background-color": "#3498db",
-              "line-color": "#2980b9",
-            },
-          },
-          {
-            selector: '[group="cluster3"]',
-            style: {
-              "background-color": "#2ecc71",
-              "line-color": "#27ae60",
-            },
-          },
-          {
-            selector: '[group="intercluster"]',
-            style: {
-              "line-style": "dashed",
+              "background-color": "#d32f2f",
+              "line-color": "#d32f2f",
+              "target-arrow-color": "#d32f2f",
             },
           },
         ],
         layout: { name: "grid" },
       });
 
-      // Layout change function
-      function changeLayout(name) {
-        const layout = cy.layout({
-          name: name,
+      // Layout configurations
+      const layoutConfigs = {
+        grid: {
+          name: "grid",
+          rows: undefined,
           animate: true,
           animationDuration: 500,
           padding: 30,
-          // Common options for force-directed layouts
-          nodeRepulsion: 4500,
+        },
+        circle: {
+          name: "circle",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          radius: undefined,
+        },
+        concentric: {
+          name: "concentric",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          minNodeSpacing: 50,
+          concentric: (node) => node.degree(),
+          levelWidth: () => 1,
+        },
+        breadthfirst: {
+          name: "breadthfirst",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          directed: true,
+          spacingFactor: 1.5,
+        },
+        cose: {
+          name: "cose",
+          animate: "end",
+          animationDuration: 500,
+          padding: 30,
+          nodeOverlap: 20,
+          componentSpacing: 40,
+          nodeRepulsion: 400000,
+          idealEdgeLength: 100,
+          edgeElasticity: 100,
+          nestingFactor: 5,
+          gravity: 80,
+          numIter: 1000,
+          initialTemp: 200,
+          coolingFactor: 0.95,
+          minTemp: 1.0,
+        },
+        cola: {
+          name: "cola",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          maxSimulationTime: 3000,
+          nodeSpacing: 30,
+          edgeLength: 100,
+          infinite: false,
+        },
+        klay: {
+          name: "klay",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          nodePlacement: "INTERACTIVE",
+          thoroughness: 7,
+          spacing: 40,
+        },
+        fcose: {
+          name: "fcose",
+          quality: "proof",
+          animate: true,
+          animationDuration: 500,
+          randomize: true,
+          padding: 30,
+          nodeSeparation: 75,
+          idealEdgeLength: (edge) => 50,
+          nodeRepulsion: (node) => 4500,
+        },
+        "cose-bilkent": {
+          name: "cose-bilkent",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          nodeDimensionsIncludeLabels: true,
           idealEdgeLength: 50,
-          edgeElasticity: 0.45,
-          nestingFactor: 0.1,
+          nodeRepulsion: 4500,
           gravity: 0.25,
-          // Specific to hierarchical layouts
+          gravityRange: 3.8,
+        },
+        cise: {
+          name: "cise",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          clusters: [], // Auto-detect clusters
+          allowNodesInsideCircle: true,
+          maxRatioOfNodesInsideCircle: 0.1,
+          springCoeff: 0.45,
+          nodeRepulsion: 4500,
+          gravity: 0.25,
+          gravityRange: 3.8,
+        },
+        elk: {
+          name: "elk",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          algorithm: "stress", // 'layered', 'force', 'mrtree', 'radial', 'stress'
+          nodeDimensionsIncludeLabels: true,
+          randomize: true,
+          "elk.spacing.nodeNode": 80,
+          "elk.layered.spacing.nodeNodeBetweenLayers": 80,
+        },
+        dagre: {
+          name: "dagre",
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
           rankDir: "TB",
-          // Specific to discrete layouts
-          spacingFactor: 1.25,
-        });
+          nodeSep: 50,
+          rankSep: 50,
+          edgeSep: 10,
+        },
+      };
+
+      // Layout control function
+      function changeLayout(name) {
+        const layout = cy.layout(layoutConfigs[name]);
         layout.run();
       }
 
-      // Apply layout to selected nodes and their neighbors
+      // Apply layout to selected nodes
       function applyLayoutToSelected(name) {
-        const selected = cy.$("node:selected");
-        if (selected.length === 0) {
-          alert("Please select at least one node");
+        const selectedNodes = cy.nodes(":selected");
+        if (selectedNodes.length === 0) {
+          alert("Please select nodes first");
           return;
         }
 
-        const neighborhood = selected.neighborhood().add(selected);
-        const layout = neighborhood.layout({
-          name: name,
+        // Get center point of selected nodes as reference
+        const bb = selectedNodes.boundingBox();
+        const center = {
+          x: (bb.x1 + bb.x2) / 2,
+          y: (bb.y1 + bb.y2) / 2,
+        };
+
+        // Get selected nodes and their neighbors
+        const neighborhood = selectedNodes.neighborhood().add(selectedNodes);
+
+        // Create layout config, inheriting from global config
+        const layoutConfig = {
+          ...layoutConfigs[name],
+          fit: false, // Don't auto-fit view
           animate: true,
           animationDuration: 500,
-          padding: 30,
+          boundingBox: {
+            // Restrict layout to selected nodes area
+            x1: center.x - 100,
+            y1: center.y - 100,
+            x2: center.x + 100,
+            y2: center.y + 100,
+          },
+        };
+
+        // Record other nodes' positions before running layout
+        const otherNodes = cy.nodes().not(neighborhood);
+        const positions = {};
+        otherNodes.forEach((node) => {
+          positions[node.id()] = { ...node.position() };
         });
+
+        // Run layout
+        const layout = neighborhood.layout(layoutConfig);
+
+        // Restore other nodes' positions after layout
+        layout.on("layoutstop", () => {
+          otherNodes.forEach((node) => {
+            node.animate({
+              position: positions[node.id()],
+              duration: 500,
+            });
+          });
+        });
+
         layout.run();
       }
 
-      // Reset to default layout
+      // Reset layout
       function resetLayout() {
         changeLayout("grid");
       }
@@ -361,23 +540,24 @@
       function zoomIn() {
         cy.animate({
           zoom: cy.zoom() * 1.2,
-          duration: 200,
+          duration: 500,
         });
       }
 
       function zoomOut() {
         cy.animate({
           zoom: cy.zoom() * 0.8,
-          duration: 200,
+          duration: 500,
         });
       }
 
       function fitView() {
         cy.animate({
           fit: {
-            padding: 30,
+            eles: cy.elements(),
+            padding: 50,
           },
-          duration: 200,
+          duration: 500,
         });
       }
 
@@ -386,9 +566,21 @@
           center: {
             eles: cy.elements(),
           },
-          duration: 200,
+          duration: 500,
         });
       }
+
+      // Add event listeners
+      cy.on("layoutstart", function (e) {
+        console.log("Layout started:", e.layout.options.name);
+      });
+
+      cy.on("layoutstop", function (e) {
+        console.log("Layout finished:", e.layout.options.name);
+      });
+
+      // Initial layout
+      changeLayout("grid");
     </script>
   </body>
 </html>
