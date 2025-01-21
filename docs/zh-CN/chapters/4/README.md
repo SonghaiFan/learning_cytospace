@@ -1,6 +1,6 @@
 # 4. 样式与视觉效果
 
-> [查看示例代码](../examples/4-样式与动画/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-样式与动画/index.html)
+> [示例在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/zh-CN/4-样式与动画/index.html)
 
 本章节将介绍如何在 Cytoscape.js 中设置元素样式和创建动画效果。
 

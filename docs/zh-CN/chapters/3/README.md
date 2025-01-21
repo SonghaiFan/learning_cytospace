@@ -1,6 +1,6 @@
 # 3. 布局与视图控制
 
-> [查看示例代码](../examples/3-布局与视图控制/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-布局与视图控制/index.html)
+> [示例在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/zh-CN/3-布局与视图控制/index.html)
 
 本章节将介绍如何控制图的布局和视图，包括不同类型的布局算法、子图布局以及视图的缩放和平移操作。
 

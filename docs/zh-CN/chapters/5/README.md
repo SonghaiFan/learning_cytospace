@@ -1,6 +1,6 @@
 # 5. 交互与事件处理
 
-> [查看示例代码](../examples/5-交互与事件处理/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-交互与事件处理/index.html)
+> [示例在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/zh-CN/5-交互与事件处理/index.html)
 
 本章节将介绍如何在 Cytoscape.js 中实现交互控制和事件处理。
 

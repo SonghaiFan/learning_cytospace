@@ -1,6 +1,6 @@
 # 4. Styles and Visual Effects
 
-> [View Example Code](../examples/4-styles-and-animations/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-styles-and-animations/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-styles-and-animations/index.html)
 
 This chapter will introduce how to set element styles and create animation effects in Cytoscape.js.
 

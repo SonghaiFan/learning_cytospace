@@ -1,6 +1,6 @@
 # 5. Interaction and Event Handling
 
-> [View Example Code](../examples/5-interaction-and-event-handling/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-interaction-and-event-handling/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-interactions-and-event-handling/index.html)
 
 This chapter will introduce how to implement interaction control and event handling in Cytoscape.
 

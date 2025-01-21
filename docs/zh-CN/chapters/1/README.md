@@ -1,6 +1,6 @@
 # 1. 环境搭建与初始化
 
-> [查看示例代码](../examples/1-环境搭建与初始化/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
+> [示例在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
 
 本章节将介绍如何使用纯 JavaScript（Vanilla JS）构建最基础的 Cytoscape.js 图可视化应用。
 

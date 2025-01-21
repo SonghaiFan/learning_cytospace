@@ -1,6 +1,6 @@
 # 3. Layout and View Control
 
-> [View Example Code](../examples/3-layout-and-view-control/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-layout-and-view-control/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-layout-and-view-control/index.html)
 
 This chapter will introduce how to control graph layouts and views in Cytoscape.js, including different types of layout algorithms, subgraph layouts, and view operations such as zooming and panning.
 

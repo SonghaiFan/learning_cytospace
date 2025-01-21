@@ -1,6 +1,6 @@
 # 6. Graph Algorithms and Analysis
 
-> [View Example Code](../examples/6-graph-algorithms-and-analysis/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-graph-algorithms-and-analysis/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-graph-algorithms-and-analysis/index.html)
 
 This chapter will introduce how to use graph algorithms and analysis features in Cytoscape.js.
 

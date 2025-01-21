@@ -1,6 +1,6 @@
 # 2. Basic Operations with Nodes and Edges
 
-> [View Example Code](../examples/2-basic-node-and-edge-operations/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-basic-node-and-edge-operations/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-basic-node-and-edge-operations/index.html)
 
 This chapter will introduce how to perform basic operations on nodes and edges in Cytoscape.js, including adding, deleting, updating elements, as well as element traversal and collection operations.
 

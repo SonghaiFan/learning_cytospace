@@ -273,166 +273,400 @@
           },
         ],
         layout: {
-          name: "klay",
-          nodeDimensionsIncludeLabels: true,
-          klay: {
-            spacing: 40,
-            direction: "RIGHT",
-          },
+          name: "cose",
+          padding: 50,
+          nodeRepulsion: 4500,
+          idealEdgeLength: 80,
+          animate: true,
+          animationDuration: 500,
+          animationEasing: "ease-out",
         },
       });
 
-      // Algorithm Implementation Functions
+      // Display algorithm results
+      function showResult(text, complexity = "") {
+        let content = text;
+        if (complexity) {
+          content += `<br><br><em>Algorithm Complexity: ${complexity}</em>`;
+        }
+        document.getElementById("result-content").innerHTML = content;
+      }
 
-      // PageRank Analysis
+      // Run PageRank
       function runPageRank() {
-        const pageRank = cy.elements().pageRank();
-        const results = [];
+        resetHighlight();
+        const ranks = cy.elements().pageRank();
+        let result = "<strong>PageRank Analysis Results:</strong><br><br>";
+        result +=
+          "PageRank algorithm evaluates node importance based on connection patterns.<br><br>";
+
         cy.nodes().forEach((node) => {
-          const rank = pageRank.rank(node);
-          results.push(`${node.data("label")}: ${rank.toFixed(3)}`);
-          node.style("width", 20 + rank * 50);
-          node.style("height", 20 + rank * 50);
+          const rank = ranks.rank(node);
+          result += `Node ${node.data("label")}: ${rank.toFixed(3)}<br>`;
+          node.style({
+            width: 20 + rank * 200,
+            height: 20 + rank * 200,
+          });
         });
-        displayResults("PageRank Values", results);
+        showResult(result, "O(E·k) where k is the number of iterations");
       }
 
-      // Betweenness Centrality
-      function findBetweenness() {
-        const bc = cy.elements().betweennessCentrality();
-        const results = [];
-        cy.nodes().forEach((node) => {
-          const centrality = bc.betweenness(node);
-          results.push(`${node.data("label")}: ${centrality.toFixed(3)}`);
-          node.style("width", 20 + centrality * 10);
-          node.style("height", 20 + centrality * 10);
-        });
-        displayResults("Betweenness Centrality", results);
-      }
-
-      // Degree Centrality
+      // Degree Centrality Analysis
       function runDegreeCentrality() {
-        const results = [];
+        resetHighlight();
+        let result = "<strong>Degree Centrality Analysis:</strong><br><br>";
+        result +=
+          "Degree centrality reflects the number of direct connections of a node.<br><br>";
+
         cy.nodes().forEach((node) => {
           const degree = node.degree();
-          results.push(`${node.data("label")}: ${degree}`);
-          node.style("width", 20 + degree * 5);
-          node.style("height", 20 + degree * 5);
+          result += `Node ${node.data("label")}: ${degree}<br>`;
+          if (degree > 3) {
+            node.addClass("highlighted");
+          }
         });
-        displayResults("Degree Centrality", results);
+        showResult(result, "O(V)");
       }
 
-      // Bridge Analysis
-      function findBridges() {
-        resetHighlight();
-        const bridges = cy.edges().filter((edge) => {
-          const source = edge.source();
-          const target = edge.target();
-          edge.remove();
-          const connected =
-            source.edgesWith(target).length > 0 ||
-            source.connected().contains(target);
-          edge.restore();
-          return !connected;
-        });
-        bridges.addClass("bridge");
-        displayResults(
-          "Bridge Edges",
-          bridges.map(
-            (e) => `${e.source().data("label")} → ${e.target().data("label")}`
-          )
-        );
-      }
-
-      // Articulation Points
-      function findArticulationPoints() {
-        resetHighlight();
-        const articulationPoints = cy.nodes().filter((node) => {
-          const neighbors = node.neighborhood().nodes();
-          if (neighbors.length < 2) return false;
-          node.remove();
-          const components = cy.elements().components();
-          node.restore();
-          return components.length > 1;
-        });
-        articulationPoints.addClass("articulation-point");
-        displayResults(
-          "Articulation Points",
-          articulationPoints.map((n) => n.data("label"))
-        );
-      }
-
-      // Community Detection
-      function findClusters() {
-        resetHighlight();
-        const nodes = cy.nodes();
-        const positions = nodes.map((node) => ({
-          x: node.position("x"),
-          y: node.position("y"),
-        }));
-
-        // Simple k-means clustering based on node positions
-        const k = 3; // Number of clusters
-        const clusters = new Array(k).fill().map(() => []);
-        nodes.forEach((node, i) => {
-          const clusterIndex = i % k;
-          clusters[clusterIndex].push(node);
-          node.addClass(`cluster-${clusterIndex}`);
-        });
-
-        displayResults(
-          "Communities",
-          clusters.map(
-            (c, i) =>
-              `Community ${i + 1}: ${c.map((n) => n.data("label")).join(", ")}`
-          )
-        );
-      }
-
-      // Shortest Path
+      // Enhanced Shortest Path Analysis
       function findShortestPath() {
         resetHighlight();
         const nodes = cy.nodes().toArray();
         const source = nodes[Math.floor(Math.random() * nodes.length)];
         const target = nodes[Math.floor(Math.random() * nodes.length)];
-        if (source === target) return findShortestPath();
 
-        const dijkstra = cy.elements().dijkstra(source);
+        if (source === target) {
+          return findShortestPath();
+        }
+
+        const dijkstra = cy.elements().dijkstra({
+          root: source,
+          directed: false,
+        });
+
         const path = dijkstra.pathTo(target);
         path.addClass("highlighted");
 
-        displayResults("Shortest Path", [
-          `From: ${source.data("label")}`,
-          `To: ${target.data("label")}`,
-          `Distance: ${dijkstra.distanceTo(target)}`,
-          `Path: ${path
-            .nodes()
-            .map((n) => n.data("label"))
-            .join(" → ")}`,
-        ]);
+        let result = "<strong>Shortest Path Analysis:</strong><br><br>";
+        result += `From node ${source.data("label")} to node ${target.data(
+          "label"
+        )}:<br>`;
+        result += `Path length: ${dijkstra.distanceTo(target).toFixed(2)}<br>`;
+        result += `Path: ${path
+          .nodes()
+          .map((n) => n.data("label"))
+          .join(" → ")}`;
+
+        showResult(result, "O((V+E)·log V)");
       }
 
-      // Reset View
-      function resetHighlight() {
-        cy.elements().removeClass("highlighted bridge articulation-point");
+      // Calculate Betweenness Centrality
+      function findBetweenness() {
+        resetHighlight();
+        const bc = cy.elements().betweennessCentrality();
+        let result =
+          "<strong>Betweenness Centrality Analysis:</strong><br><br>";
+        result +=
+          "Betweenness centrality reflects the importance of nodes as network intermediaries.<br><br>";
+
         cy.nodes().forEach((node) => {
-          node.removeClasses(["cluster-0", "cluster-1", "cluster-2"]);
-          node.style("width", 30);
-          node.style("height", 30);
+          const centrality = bc.betweenness(node);
+          result += `Node ${node.data("label")}: ${centrality.toFixed(3)}<br>`;
+          if (centrality > 0.2) {
+            node.addClass("highlighted");
+          }
         });
+        showResult(result, "O(V·E)");
       }
 
-      // Display Results
-      function displayResults(title, results) {
-        const resultContent = document.getElementById("result-content");
-        resultContent.innerHTML = `
-          <h3>${title}</h3>
-          ${
-            Array.isArray(results)
-              ? results.map((r) => `<div>${r}</div>`).join("")
-              : results
+      // Custom Bridge Detection Algorithm
+      function detectBridges(cy) {
+        const bridges = [];
+        const edges = cy.edges();
+
+        edges.forEach((edge) => {
+          // Temporarily remove edge
+          const edgeData = edge.remove();
+
+          // Check connectivity
+          const components = cy.elements().components();
+          if (components.length > 1) {
+            bridges.push(edge);
           }
-        `;
+
+          // Restore edge
+          cy.add(edgeData);
+        });
+
+        return bridges;
+      }
+
+      // Custom Articulation Point Detection Algorithm
+      function detectArticulationPoints(cy) {
+        const articulationPoints = [];
+        const nodes = cy.nodes();
+
+        nodes.forEach((node) => {
+          // Temporarily remove node and its connected edges
+          const nodeData = node.remove();
+
+          // Check connectivity
+          const components = cy.elements().components();
+          if (components.length > 1) {
+            articulationPoints.push(node);
+          }
+
+          // Restore node
+          cy.add(nodeData);
+        });
+
+        return articulationPoints;
+      }
+
+      // Modified Bridge Analysis Function
+      function findBridges() {
+        resetHighlight();
+        const bridges = detectBridges(cy);
+
+        // Animate bridge display
+        bridges.forEach((edge, index) => {
+          setTimeout(() => {
+            edge.addClass("bridge");
+
+            // Add pulse animation effect
+            const animate = () => {
+              edge
+                .animate({
+                  style: { width: 6 },
+                  duration: 1000,
+                })
+                .animate({
+                  style: { width: 4 },
+                  duration: 1000,
+                  complete: animate,
+                });
+            };
+            animate();
+
+            // Highlight connected nodes
+            edge.connectedNodes().addClass("highlighted");
+          }, index * 500);
+        });
+
+        let result = "<strong>Bridge Analysis Results:</strong><br><br>";
+        result +=
+          "Bridge edges are critical connections whose removal would disconnect the graph.<br><br>";
+
+        if (bridges.length > 0) {
+          result += "Discovered bridges:<br>";
+          bridges.forEach((edge) => {
+            const source = edge.source().data("label");
+            const target = edge.target().data("label");
+            result += `<span style="color: #ff4444">▶</span> ${source} → ${target}: 
+                      Connects two different communities<br>`;
+          });
+          result += "<br><strong>Impact Analysis:</strong><br>";
+          result +=
+            "- Removing these edges would split the network into disconnected parts<br>";
+          result +=
+            "- They are the only information flow channels between communities<br>";
+          result +=
+            "- Special attention needed for these connections' stability";
+        } else {
+          result += "No bridges found, network has strong connectivity.";
+        }
+
+        showResult(result, "O(V+E)");
+      }
+
+      // Modified Articulation Point Analysis Function
+      function findArticulationPoints() {
+        resetHighlight();
+        const articulationPoints = detectArticulationPoints(cy);
+
+        // Animate articulation point display
+        articulationPoints.forEach((node, index) => {
+          setTimeout(() => {
+            node.addClass("articulation-point");
+
+            // Add pulse animation effect
+            const animate = () => {
+              node
+                .animate({
+                  style: { width: 40, height: 40 },
+                  duration: 1000,
+                })
+                .animate({
+                  style: { width: 35, height: 35 },
+                  duration: 1000,
+                  complete: animate,
+                });
+            };
+            animate();
+
+            // Highlight connected edges
+            node.connectedEdges().addClass("highlighted");
+          }, index * 500);
+        });
+
+        let result =
+          "<strong>Articulation Point Analysis Results:</strong><br><br>";
+        result +=
+          "Articulation points are critical nodes whose removal would increase graph components.<br><br>";
+
+        if (articulationPoints.length > 0) {
+          result += "Discovered articulation points:<br>";
+          articulationPoints.forEach((node) => {
+            const label = node.data("label");
+            const neighbors = node.neighborhood().length;
+            const communities = new Set(
+              node
+                .neighborhood()
+                .nodes()
+                .map((n) => n.data("label")[0])
+            ).size;
+
+            result += `<span style="color: #4444ff">◆</span> ${label}: 
+                      Connected to ${neighbors} neighbor nodes, 
+                      Spans ${communities} communities<br>`;
+          });
+          result += "<br><strong>Impact Analysis:</strong><br>";
+          result +=
+            "- Removing these nodes would split the network into multiple parts<br>";
+          result +=
+            "- They are key transit points between different communities<br>";
+          result += "- Backup paths recommended for these nodes";
+        } else {
+          result +=
+            "No articulation points found, network has strong connectivity.";
+        }
+
+        showResult(result, "O(V+E)");
+      }
+
+      // Clustering Analysis
+      function findClusters() {
+        resetHighlight();
+        // Use k-means clustering
+        const k = 3; // Number of clusters
+        const positions = cy.nodes().map((node) => ({
+          id: node.id(),
+          x: node.position("x"),
+          y: node.position("y"),
+        }));
+
+        // Simple k-means implementation
+        const clusters = kMeans(positions, k);
+        let result = "Clustering results:<br>";
+        Object.keys(clusters).forEach((clusterId) => {
+          const nodes = clusters[clusterId];
+          result += `Cluster ${clusterId}: ${nodes.join(", ")}<br>`;
+          nodes.forEach((nodeId) => {
+            cy.$id(nodeId).addClass(`cluster-${clusterId}`);
+          });
+        });
+        showResult(result);
+      }
+
+      // k-means clustering algorithm
+      function kMeans(points, k) {
+        // Initialize centers
+        let centers = points.slice(0, k).map((p) => ({ x: p.x, y: p.y }));
+        let clusters = {};
+        let changed = true;
+        let maxIterations = 10;
+
+        while (changed && maxIterations > 0) {
+          changed = false;
+          clusters = {};
+
+          // Assign points to nearest center
+          points.forEach((point) => {
+            const closestCenter = findClosestCenter(point, centers);
+            if (!clusters[closestCenter]) clusters[closestCenter] = [];
+            clusters[closestCenter].push(point.id);
+          });
+
+          // Update centers
+          Object.keys(clusters).forEach((i) => {
+            const newCenter = calculateCenter(
+              clusters[i].map((id) => points.find((p) => p.id === id))
+            );
+            if (
+              Math.abs(newCenter.x - centers[i].x) > 0.1 ||
+              Math.abs(newCenter.y - centers[i].y) > 0.1
+            ) {
+              changed = true;
+            }
+            centers[i] = newCenter;
+          });
+
+          maxIterations--;
+        }
+
+        return clusters;
+      }
+
+      // Find closest center
+      function findClosestCenter(point, centers) {
+        let minDist = Infinity;
+        let closest = 0;
+        centers.forEach((center, i) => {
+          const dist = Math.sqrt(
+            Math.pow(point.x - center.x, 2) + Math.pow(point.y - center.y, 2)
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            closest = i;
+          }
+        });
+        return closest;
+      }
+
+      // Calculate center
+      function calculateCenter(points) {
+        const sum = points.reduce(
+          (acc, p) => ({
+            x: acc.x + p.x,
+            y: acc.y + p.y,
+          }),
+          { x: 0, y: 0 }
+        );
+        return {
+          x: sum.x / points.length,
+          y: sum.y / points.length,
+        };
+      }
+
+      // Enhanced Reset Highlight
+      function resetHighlight() {
+        // Stop all ongoing animations
+        cy.elements().stop();
+
+        // Remove all style classes
+        cy.elements().removeClass("highlighted bridge articulation-point");
+
+        // Reset node sizes
+        cy.nodes().forEach((node) => {
+          node.style({
+            width: 30,
+            height: 30,
+          });
+        });
+
+        // Reset edge styles
+        cy.edges().forEach((edge) => {
+          edge.style({
+            width: "data(weight)",
+          });
+        });
+
+        // Clear clustering styles
+        ["cluster-0", "cluster-1", "cluster-2"].forEach((cls) => {
+          cy.elements().removeClass(cls);
+        });
+
+        showResult("");
       }
     </script>
   </body>

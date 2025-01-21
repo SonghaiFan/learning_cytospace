@@ -1,6 +1,6 @@
 # 6. 图算法与分析
 
-> [查看示例代码](../examples/6-图算法与分析/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-图算法与分析/index.html)
+> [示例在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/zh-CN/6-图算法与分析/index.html)
 
 本章节将介绍如何使用 Cytoscape.js 实现常见的图算法和网络分析功能。
 

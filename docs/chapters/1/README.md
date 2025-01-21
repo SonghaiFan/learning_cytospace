@@ -1,6 +1,6 @@
 # 1. Environment Setup and Initialization
 
-> [View Example Code](../examples/1-environment-setup-and-initialization/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-environment-setup-and-initialization/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-environment-setup-and-initialization/index.html)
 
 This chapter will introduce how to build a basic Cytoscape.js graph visualization application using pure JavaScript (Vanilla JS).
 
