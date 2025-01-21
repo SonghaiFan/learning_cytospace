@@ -30,5 +30,3 @@ Navigate through the chapters using the sidebar. Each chapter includes:
 ## Resources
 
 - [Cytoscape.js Official Documentation](https://js.cytoscape.org)
-- [GitHub Repository](https://github.com/songhaifan/learning_cytospace)
-- [Live Examples](examples/)
