@@ -1,30 +1,30 @@
-# 4. Styles and Visual Effects
+# 4. 样式与视觉效果
 
-> [View Example Code](../examples/4-styles-and-animations/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-styles-and-animations/index.html)
+> [查看示例代码](../examples/4-样式与动画/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-样式与动画/index.html)
 
-This chapter will introduce how to set element styles and create animation effects in Cytoscape.js.
+本章节将介绍如何在 Cytoscape.js 中设置元素样式和创建动画效果。
 
-## Basic Style Setup
+## 基础样式设置
 
-Initialize a graph instance with basic styles:
+初始化图实例时设置基础样式：
 
 ```javascript
 const cy = cytoscape({
   container: document.getElementById("cy"),
   elements: [
-    // Nodes
-    { data: { id: "a", label: "Node A", type: "special" } },
-    { data: { id: "b", label: "Node B", weight: 75 } },
-    { data: { id: "c", label: "Node C", parent: "compound" } },
-    // Compound node
-    { data: { id: "compound", label: "Compound Node" } },
-    // Edges
+    // 节点
+    { data: { id: "a", label: "节点 A", type: "special" } },
+    { data: { id: "b", label: "节点 B", weight: 75 } },
+    { data: { id: "c", label: "节点 C", parent: "compound" } },
+    // 复合节点
+    { data: { id: "compound", label: "复合节点" } },
+    // 边
     {
       data: {
         id: "ab",
         source: "a",
         target: "b",
-        label: "Edge AB",
+        label: "边 AB",
         weight: 2,
       },
     },
@@ -33,7 +33,7 @@ const cy = cytoscape({
         id: "bc",
         source: "b",
         target: "c",
-        label: "Edge BC",
+        label: "边 BC",
         weight: 1,
       },
     },
@@ -42,13 +42,13 @@ const cy = cytoscape({
         id: "ca",
         source: "c",
         target: "a",
-        label: "Edge CA",
+        label: "边 CA",
         weight: 3,
       },
     },
   ],
   style: [
-    // Basic node style
+    // 基础节点样式
     {
       selector: "node",
       style: {
@@ -58,17 +58,17 @@ const cy = cytoscape({
         "text-halign": "center",
         width: 60,
         height: 60,
-        // Font style
+        // 字体样式
         "font-size": 12,
         "font-weight": "normal",
         "font-family": "Helvetica",
-        // Border style
+        // 边框样式
         "border-width": 2,
         "border-color": "#000",
         "border-opacity": 0.5,
       },
     },
-    // Special node style
+    // 特殊节点样式
     {
       selector: "node[type='special']",
       style: {
@@ -76,7 +76,7 @@ const cy = cytoscape({
         shape: "diamond",
       },
     },
-    // Data-driven node style
+    // 基于数据的节点样式
     {
       selector: "node[weight]",
       style: {
@@ -84,7 +84,7 @@ const cy = cytoscape({
         height: "data(weight)",
       },
     },
-    // Compound node style
+    // 复合节点样式
     {
       selector: "node:parent",
       style: {
@@ -94,7 +94,7 @@ const cy = cytoscape({
         "border-color": "#ad1a66",
       },
     },
-    // Basic edge style
+    // 基础边样式
     {
       selector: "edge",
       style: {
@@ -104,18 +104,18 @@ const cy = cytoscape({
         "target-arrow-shape": "triangle",
         label: "data(label)",
         "text-rotation": "autorotate",
-        // Edge label style
+        // 边标签样式
         "text-margin-y": -10,
         "text-background-color": "#fff",
         "text-background-opacity": 1,
         "text-background-padding": 4,
-        // Arrow style
+        // 箭头样式
         "target-arrow-color": "#999",
         "source-arrow-color": "#999",
         "arrow-scale": 1.5,
       },
     },
-    // Data-driven edge style
+    // 基于数据的边样式
     {
       selector: "edge[weight]",
       style: {
@@ -123,7 +123,7 @@ const cy = cytoscape({
         "line-style": "data(weight)",
       },
     },
-    // Interaction state styles
+    // 交互状态样式
     {
       selector: ":selected",
       style: {
@@ -152,24 +152,24 @@ const cy = cytoscape({
 });
 ```
 
-## Style Control
+## 样式控制
 
-### Node Styles
+### 节点样式
 
-#### Basic Shapes
+#### 基础形状
 
 ```javascript
 function changeNodeShape(shape) {
   cy.nodes().style({
-    shape: shape, // Available values:
-    // Basic shapes: 'ellipse', 'triangle', 'rectangle', 'diamond'
-    // Polygons: 'pentagon', 'hexagon', 'heptagon', 'octagon'
-    // Special shapes: 'star', 'vee', 'rhomboid'
-    // Custom: 'polygon' with 'shape-polygon-points'
+    shape: shape, // 可用值：
+    // 基础形状：'ellipse', 'triangle', 'rectangle', 'diamond'
+    // 多边形：'pentagon', 'hexagon', 'heptagon', 'octagon'
+    // 特殊形状：'star', 'vee', 'rhomboid'
+    // 自定义：'polygon' 配合 'shape-polygon-points'
   });
 }
 
-// Custom polygon
+// 自定义多边形
 function setCustomPolygon() {
   cy.nodes().style({
     shape: "polygon",
@@ -180,11 +180,11 @@ function setCustomPolygon() {
 }
 ```
 
-#### Compound Styles
+#### 复合样式
 
 ```javascript
 function setCompoundStyle() {
-  // Parent node style
+  // 父节点样式
   cy.nodes(":parent").style({
     "background-opacity": 0.333,
     "background-color": "#ad1a66",
@@ -194,7 +194,7 @@ function setCompoundStyle() {
     padding: 10,
   });
 
-  // Child node style
+  // 子节点样式
   cy.nodes(":child").style({
     "background-color": "#f1f1f1",
     shape: "rectangle",
@@ -202,7 +202,7 @@ function setCompoundStyle() {
 }
 ```
 
-#### Gradient Effects
+#### 渐变效果
 
 ```javascript
 function setGradient() {
@@ -214,31 +214,31 @@ function setGradient() {
 }
 ```
 
-### Edge Styles
+### 边样式
 
-#### Line Types and Arrows
+#### 线型与箭头
 
 ```javascript
 function setEdgeStyle() {
   cy.edges().style({
-    // Line type
+    // 线型
     "curve-style": "bezier", // 'haystack', 'segments', 'straight', 'taxi'
     "line-style": "solid", // 'dotted', 'dashed'
-    "line-dash-pattern": [6, 3], // Custom dash pattern
+    "line-dash-pattern": [6, 3], // 自定义虚线模式
     "line-dash-offset": 1,
 
-    // Arrows
+    // 箭头
     "source-arrow-shape": "triangle",
     "mid-source-arrow-shape": "diamond",
     "target-arrow-shape": "triangle",
     "source-arrow-fill": "hollow", // 'filled'
     "target-arrow-fill": "filled",
 
-    // Endpoints
+    // 端点
     "source-endpoint": "outside-to-node",
     "target-endpoint": "outside-to-node",
 
-    // Control points
+    // 控制点
     "control-point-step-size": 40,
     "control-point-weights": [0.25, 0.75],
     "control-point-distances": [-50, 50],
@@ -246,17 +246,17 @@ function setEdgeStyle() {
 }
 ```
 
-#### Compound Edges
+#### 复合边
 
 ```javascript
 function setCompoundEdge() {
-  // Edges from node to compound node
+  // 节点到复合节点的边
   cy.edges('[source = "compound"]').style({
     "curve-style": "bezier",
     "source-endpoint": "inside-to-node",
   });
 
-  // Edges within compound node
+  // 复合节点内部的边
   cy.edges()
     .filter(
       (edge) => edge.source().parent().id() === edge.target().parent().id()
@@ -267,13 +267,13 @@ function setCompoundEdge() {
 }
 ```
 
-## Animation System
+## 动画系统
 
-### Basic Animations
+### 基础动画
 
 ```javascript
 function basicAnimation() {
-  // Single property animation
+  // 单个属性动画
   cy.nodes().animate({
     style: {
       backgroundColor: "#ff0000",
@@ -284,13 +284,13 @@ function basicAnimation() {
     easing: "ease-in-out-cubic",
   });
 
-  // Position animation
+  // 位置动画
   cy.nodes().animate({
     position: { x: 100, y: 100 },
     duration: 1000,
   });
 
-  // Combined style and position animation
+  // 样式和位置组合动画
   cy.nodes().animate({
     style: { backgroundColor: "#ff0000" },
     position: { x: 100, y: 100 },
@@ -299,11 +299,11 @@ function basicAnimation() {
 }
 ```
 
-### Complex Animation Sequences
+### 复杂动画序列
 
 ```javascript
 function complexAnimation() {
-  // Create animations
+  // 创建动画
   const a1 = cy.nodes().animation({
     style: { backgroundColor: "#ff0000" },
     duration: 1000,
@@ -314,17 +314,17 @@ function complexAnimation() {
     duration: 1000,
   });
 
-  // Parallel animations
+  // 并行动画
   Promise.all([a1.play().promise(), a2.play().promise()]).then(() => {
-    // Operations after animations complete
+    // 动画完成后的操作
   });
 
-  // Sequential animations
+  // 序列动画
   a1.play()
     .promise("complete")
     .then(() => a2.play());
 
-  // Repeat animation
+  // 重复动画
   a1.play()
     .promise("complete")
     .then(() => {
@@ -333,13 +333,13 @@ function complexAnimation() {
 }
 ```
 
-### Animation Queue
+### 动画队列
 
 ```javascript
 function queueAnimation() {
   const queue = cy.nodes();
 
-  // Add to queue
+  // 添加到队列
   queue
     .animation({
       style: { backgroundColor: "#ff0000" },
@@ -354,16 +354,16 @@ function queueAnimation() {
     })
     .play();
 
-  // Clear queue
+  // 清空队列
   queue.stop();
 }
 ```
 
-### Performance-Optimized Animations
+### 性能优化动画
 
 ```javascript
 function performantAnimation() {
-  // Batch processing
+  // 批量处理
   cy.batch(() => {
     cy.nodes().forEach((node) => {
       node
@@ -375,7 +375,7 @@ function performantAnimation() {
     });
   });
 
-  // Use requestAnimationFrame
+  // 使用 requestAnimationFrame
   let frame = 0;
   const animate = () => {
     const progress = frame / 60; // 60fps
@@ -389,89 +389,89 @@ function performantAnimation() {
 }
 ```
 
-## Key Concepts Explanation
+## 关键概念说明
 
-1. **Style Selectors**
+1. **样式选择器**
 
-   - `node`, `edge`: All nodes/edges
-   - `#id`: Elements with specific ID
-   - `.className`: Elements with specific class
-   - `[attributeName]`: Elements with specific attributes
-   - `:selected`, `:active`, `:grabbed`: State selectors
-   - `:parent`, `:child`: Compound node selectors
-   - `>`, `~`, `+`: Relationship selectors
+   - `node`, `edge`: 所有节点/边
+   - `#id`: 特定 ID 的元素
+   - `.className`: 特定类的元素
+   - `[属性名]`: 带有特定属性的元素
+   - `:selected`, `:active`, `:grabbed`: 状态选择器
+   - `:parent`, `:child`: 复合节点选择器
+   - `>`, `~`, `+`: 关系选择器
 
-2. **Node Style Properties**
+2. **节点样式属性**
 
-   - **Basic Properties**
-     - `shape`: Node shape
-     - `background-color`: Background color
-     - `width`, `height`: Dimensions
-     - `label`: Label text
-   - **Border and Shadow**
-     - `border-width`: Border width
-     - `border-style`: Border style
-     - `border-color`: Border color
-     - `shadow-blur`: Shadow blur
-     - `shadow-color`: Shadow color
-   - **Text Style**
-     - `font-family`: Font family
-     - `font-size`: Font size
-     - `text-valign`: Vertical alignment
-     - `text-halign`: Horizontal alignment
-     - `text-wrap`: Text wrapping
-   - **Gradient and Opacity**
-     - `background-opacity`: Background opacity
-     - `background-gradient-direction`: Gradient direction
-     - `background-gradient-stop-colors`: Gradient colors
-     - `background-gradient-stop-positions`: Gradient positions
+   - **基础属性**
+     - `shape`: 节点形状
+     - `background-color`: 背景颜色
+     - `width`, `height`: 尺寸
+     - `label`: 标签文本
+   - **边框与阴影**
+     - `border-width`: 边框宽度
+     - `border-style`: 边框样式
+     - `border-color`: 边框颜色
+     - `shadow-blur`: 阴影模糊
+     - `shadow-color`: 阴影颜色
+   - **文本样式**
+     - `font-family`: 字体
+     - `font-size`: 字号
+     - `text-valign`: 垂直对齐
+     - `text-halign`: 水平对齐
+     - `text-wrap`: 文本换行
+   - **渐变与透明度**
+     - `background-opacity`: 背景透明度
+     - `background-gradient-direction`: 渐变方向
+     - `background-gradient-stop-colors`: 渐变颜色
+     - `background-gradient-stop-positions`: 渐变位置
 
-3. **Edge Style Properties**
+3. **边样式属性**
 
-   - **Line Properties**
-     - `line-style`: Line style
-     - `line-color`: Line color
-     - `width`: Line width
-     - `curve-style`: Curve style
-   - **Arrow Properties**
-     - `source-arrow-shape`: Source arrow
-     - `target-arrow-shape`: Target arrow
-     - `arrow-scale`: Arrow size
-     - `arrow-fill`: Arrow fill
-   - **Label Properties**
-     - `text-rotation`: Text rotation
-     - `text-margin-x/y`: Text margin
-     - `text-background-color`: Text background color
-     - `text-border-width`: Text border width
+   - **线条属性**
+     - `line-style`: 线型样式
+     - `line-color`: 线条颜色
+     - `width`: 线条宽度
+     - `curve-style`: 曲线样式
+   - **箭头属性**
+     - `source-arrow-shape`: 起始箭头
+     - `target-arrow-shape`: 目标箭头
+     - `arrow-scale`: 箭头大小
+     - `arrow-fill`: 箭头填充
+   - **标签属性**
+     - `text-rotation`: 文本旋转
+     - `text-margin-x/y`: 文本边距
+     - `text-background-color`: 文本背景色
+     - `text-border-width`: 文本边框宽度
 
-4. **Animation System**
+4. **动画系统**
 
-   - **Animation Properties**
-     - `duration`: Duration
-     - `easing`: Easing function
-     - `delay`: Delay time
-     - `queue`: Whether to queue
-   - **Animation Control**
-     - `play()`: Play animation
-     - `pause()`: Pause animation
-     - `stop()`: Stop animation
-     - `rewind()`: Reset animation
-     - `reverse()`: Reverse playback
-   - **Animation Events**
-     - `complete`: Complete event
-     - `step`: Step event
-     - `frame`: Frame event
-   - **Performance Optimization**
-     - Use `batch()`
-     - Avoid frequent style updates
-     - Use `requestAnimationFrame`
-     - Use animation queue appropriately
+   - **动画属性**
+     - `duration`: 持续时间
+     - `easing`: 缓动函数
+     - `delay`: 延迟时间
+     - `queue`: 是否队列化
+   - **动画控制**
+     - `play()`: 播放动画
+     - `pause()`: 暂停动画
+     - `stop()`: 停止动画
+     - `rewind()`: 重置动画
+     - `reverse()`: 反向播放
+   - **动画事件**
+     - `complete`: 完成事件
+     - `step`: 步进事件
+     - `frame`: 帧事件
+   - **性能优化**
+     - 使用 `batch()`
+     - 避免频繁样式更新
+     - 使用 `requestAnimationFrame`
+     - 合理使用动画队列
 
-5. **Performance Optimization**
+5. **性能优化**
 
-   - Use class selectors instead of attribute selectors
-   - Cache frequently used selector results
-   - Batch process style updates
-   - Use `raf` instead of `setInterval`
-   - Avoid unnecessary animations
-   - Set reasonable animation frame rates
+   - 使用类选择器代替属性选择器
+   - 缓存频繁使用的选择器结果
+   - 批量处理样式更新
+   - 使用 `raf` 代替 `setInterval`
+   - 避免不必要的动画
+   - 合理设置动画帧率

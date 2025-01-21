@@ -1,70 +1,98 @@
-# 松海范 Cytoscape.js 学习项目
+# Cytoscape.js Learning Examples
 
-> 一个全面的 Cytoscape.js 中文教程，包含教程文档和配套示例代码。
+> Practice examples for learning Cytoscape.js (Cytoscape.js 学习教程的实践示例)
 
-## 项目结构
+## Directory Structure 目录结构
 
 ```
 .
-├── README.md                     # 项目说明文档
-├── cytoscape_learning_code/      # 示例代码目录
-│   ├── 1-环境搭建与初始化/       # 第1章：环境配置与基础概念
-│   ├── 2-节点与边的基础操作/     # 第2章：图元素操作
-│   ├── 3-布局与视图控制/         # 第3章：布局算法与视图
-│   ├── 4-样式与动画/            # 第4章：样式设置与动画效果
-│   ├── 5-交互与事件处理/         # 第5章：交互功能实现
-│   ├── 6-图算法与分析/          # 第6章：图分析算法
-│   ├── 7-数据导入导出/          # 第7章：数据处理
-│   └── README.md                # 示例代码说明
-└── docs/                        # 教程文档目录
-    ├── README.md                # 文档首页
-    ├── _coverpage.md           # 文档封面
-    ├── _sidebar.md             # 文档侧边栏
-    ├── chapters/               # 章节内容
-    └── index.html              # 文档入口
+├── cytoscape_learning_code/   # Example code 示例代码
+├── docs/                      # Documentation 文档
+│   └── zh-CN/                # Chinese documentation 中文文档
 ```
 
-## 在线文档
+## Getting Started 使用说明
 
-访问 [在线文档](https://songhaifan.github.io/learning_cytospace) 开始学习。
+1. **Environment Requirements 运行环境**
 
-## 示例代码
+   - Modern browsers (Chrome, Firefox, Safari, Edge, etc.)
+   - ES6+ support
+   - Internet connection (for CDN resources)
 
-每个章节都提供了完整的示例代码，可以直接在浏览器中运行：
+2. **How to Run 运行方式**
 
-1. [环境搭建与初始化](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
-2. [节点与边的基础操作](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-节点与边的基础操作/index.html)
-3. [布局与视图控制](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/3-布局与视图控制/index.html)
-4. [样式与动画](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/4-样式与动画/index.html)
-5. [交互与事件处理](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-交互与事件处理/index.html)
-6. [图算法与分析](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-图算法与分析/index.html)
-7. [数据导入导出](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-数据导入导出/index.html)
+   - Open HTML files directly in browser
+   - No build steps required
+   - Each example is self-contained and runnable
 
-## 使用说明
+3. **Code Structure 代码结构**
 
-1. 文档阅读
+   - Each chapter contains complete example code
+   - HTML files include necessary styles and scripts
+   - Detailed comments explain implementation
 
-   - 访问在线文档
-   - 按章节顺序学习
-   - 结合示例理解概念
+4. **Learning Tips 学习建议**
+   - Follow chapters in sequence
+   - Read documentation alongside code
+   - Experiment with parameters
+   - Try implementing similar features
 
-2. 代码运行
+## Chapters 章节内容
 
-   - 直接在浏览器中打开示例链接
-   - 查看源代码了解实现细节
-   - 修改参数观察效果变化
+### 1. Setup and Initialization 环境搭建与初始化
 
-3. 开发环境
-   - 现代浏览器（Chrome、Firefox、Safari、Edge 等）
-   - 支持 ES6+ 语法
-   - 网络连接（用于加载 CDN 资源）
+- Basic environment configuration
+- Cytoscape.js integration methods
+- Graph instance initialization
+- Basic configuration options
 
-## 作者
+### 2. Basic Node and Edge Operations 节点与边的基础操作
 
-SONGHAI FAN
+- CRUD operations for nodes
+- CRUD operations for edges
+- Element selector usage
+- Data attribute management
 
-## 许可证
+### 3. Layout and View Control 布局与视图控制
 
-本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
+- Various layout algorithm examples
+- Layout parameter configuration
+- View manipulation methods
+- Layout extension applications
 
-Copyright (c) 2024 SONGHAI FAN
+### 4. Styles and Animations 样式与动画
+
+- Basic style settings
+- Dynamic style changes
+- Animation implementation
+- Transition control
+
+### 5. Interaction and Event Handling 交互与事件处理
+
+- Event listening methods
+- User interaction implementation
+- Tooltip development
+- Context menu examples
+
+### 6. Graph Algorithms and Analysis 图算法与分析
+
+- Path finding algorithms
+- Graph connectivity analysis
+- Centrality calculation methods
+- Community detection
+
+### 7. Advanced Features 高级特性
+
+- Compound nodes
+- Data export functionality
+- Performance optimization
+- Extension development
+
+## Documentation 文档
+
+- Documentation: [/docs](/docs)
+- Chinese documentation: [/docs/zh-CN](/docs/zh-CN)
+
+## License
+
+MIT License

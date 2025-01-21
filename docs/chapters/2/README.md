@@ -1,30 +1,30 @@
-# 2. 节点与边的基础操作
+# 2. Basic Operations with Nodes and Edges
 
-> [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/2-节点与边的基础操作) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-节点与边的基础操作/index.html)
+> [View Example Code](../examples/2-basic-node-and-edge-operations/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/2-basic-node-and-edge-operations/index.html)
 
-本章节介绍 Cytoscape.js 中节点（Node）和边（Edge）的基本操作，包括添加、删除、修改和查询等功能。
+This chapter will introduce how to perform basic operations on nodes and edges in Cytoscape.js, including adding, deleting, updating elements, as well as element traversal and collection operations.
 
-## 基础概念
+## Initialize Graph Instance
 
-在 Cytoscape.js 中，节点和边统称为元素（Elements）。每个元素都包含以下属性：
-
-- `group`: 元素类型，可以是 'nodes' 或 'edges'
-- `data`: 元素的数据对象，包含 id、label 等属性
-- `position`: 节点的位置信息（仅适用于节点）
-
-## 元素操作示例
-
-### 初始化图实例
+First, let's create a graph instance with initial nodes and edges:
 
 ```javascript
 const cy = cytoscape({
   container: document.getElementById("cy"),
   elements: [
-    // 初始节点
-    { data: { id: "a", label: "节点 A" } },
-    { data: { id: "b", label: "节点 B" } },
-    // 初始边
-    { data: { id: "ab", source: "a", target: "b", label: "边 AB" } },
+    // Initial nodes
+    { data: { id: "a", label: "Node A", weight: 75 } },
+    { data: { id: "b", label: "Node B", weight: 65 } },
+    // Initial edges
+    {
+      data: {
+        id: "ab",
+        source: "a",
+        target: "b",
+        label: "Edge AB",
+        weight: 1.5,
+      },
+    },
   ],
   style: [
     {
@@ -32,12 +32,16 @@ const cy = cytoscape({
       style: {
         "background-color": "#666",
         label: "data(label)",
+        "text-valign": "center",
+        "text-halign": "center",
+        width: "data(weight)", // Use data property to control style
+        height: "data(weight)",
       },
     },
     {
       selector: "edge",
       style: {
-        width: 2,
+        width: "data(weight)", // Use data property to control style
         "line-color": "#999",
         label: "data(label)",
         "curve-style": "bezier",
@@ -50,6 +54,7 @@ const cy = cytoscape({
         "background-color": "#900",
         "line-color": "#900",
         "target-arrow-color": "#900",
+        "source-arrow-color": "#900",
       },
     },
   ],
@@ -57,46 +62,48 @@ const cy = cytoscape({
 });
 ```
 
-### 添加节点
+## Element Operations
+
+### Adding Elements
+
+#### Add Single Node
 
 ```javascript
 function addNode() {
   const id = "node-" + Date.now();
   cy.add({
     group: "nodes",
-    data: { id, label: `节点 ${id}` },
+    data: {
+      id,
+      label: `Node ${id}`,
+      weight: Math.random() * 50 + 50, // Random weight
+    },
     position: {
+      // Can specify position
       x: Math.random() * 300 + 150,
       y: Math.random() * 200 + 100,
     },
+    selected: true, // Can set initial state
+    classes: ["new-node"], // Can add classes
   });
 }
 ```
 
-### 添加边
+#### Batch Add Elements
 
 ```javascript
-function addEdge() {
-  const selected = cy.$("node:selected");
-  if (selected.length === 2) {
-    const [source, target] = selected;
-    const id = "edge-" + Date.now();
-    cy.add({
-      group: "edges",
-      data: {
-        id,
-        source: source.id(),
-        target: target.id(),
-        label: `边 ${id}`,
-      },
-    });
-  } else {
-    alert("请先选择两个节点");
-  }
+function addMultipleElements() {
+  cy.add([
+    { group: "nodes", data: { id: "n1" } },
+    { group: "nodes", data: { id: "n2" } },
+    { group: "edges", data: { id: "e1", source: "n1", target: "n2" } },
+  ]);
 }
 ```
 
-### 删除元素
+### Deleting Elements
+
+#### Delete Selected Elements
 
 ```javascript
 function removeSelected() {
@@ -104,132 +111,190 @@ function removeSelected() {
 }
 ```
 
-### 更新元素
+#### Conditional Deletion
 
 ```javascript
-function updateSelected() {
+function removeByCondition() {
+  // Delete all isolated nodes
+  cy.$("node[[degree = 0]]").remove();
+
+  // Delete specific types of edges
+  cy.$("edge[weight < 1]").remove();
+}
+```
+
+### Updating Elements
+
+#### Update Data
+
+```javascript
+function updateElementData() {
+  // Update single property
   cy.$("node:selected").forEach((node) => {
-    const newLabel = prompt("输入新标签:", node.data("label"));
+    const newLabel = prompt("Enter new label:", node.data("label"));
     if (newLabel) {
       node.data("label", newLabel);
     }
   });
+
+  // Batch update multiple properties
+  cy.$("node:selected").data({
+    weight: 100,
+    type: "updated",
+    timestamp: Date.now(),
+  });
 }
 ```
 
-## 元素选择器
-
-Cytoscape.js 提供了强大的选择器语法，类似于 CSS 选择器：
-
-- `node`: 选择所有节点
-- `edge`: 选择所有边
-- `#id`: 通过 ID 选择元素
-- `:selected`: 选择当前选中的元素
-- `[attribute]`: 选择具有特定属性的元素
-- `[attribute="value"]`: 选择属性值匹配的元素
-
-示例：
+#### Update Position
 
 ```javascript
-// 选择所有节点
-cy.$("node");
-
-// 选择特定 ID 的节点
-cy.$("#node-1");
-
-// 选择所有选中的元素
-cy.$(":selected");
-
-// 选择具有特定属性的元素
-cy.$("[weight > 50]");
+function updatePosition() {
+  cy.$("node:selected").position({
+    x: 100,
+    y: 100,
+  });
+}
 ```
 
-## 数据操作
+## Element Traversal and Collections
 
-### 获取数据
+### Basic Selectors
 
 ```javascript
-// 获取元素数据
-const label = node.data("label");
-const source = edge.data("source");
+// Select all nodes
+const allNodes = cy.nodes();
 
-// 获取元素 ID
-const id = element.id();
+// Select all edges
+const allEdges = cy.edges();
+
+// Select element by specific ID
+const nodeA = cy.$("#a");
+
+// Select elements by class
+const newNodes = cy.$(".new-node");
+
+// Select elements with specific data attributes
+const heavyNodes = cy.$("node[weight >= 75]");
 ```
 
-### 修改数据
+### Traversal Operations
 
 ```javascript
-// 修改单个属性
-element.data("label", "新标签");
+// Traverse all neighboring nodes
+function traverseNeighbors(nodeId) {
+  const node = cy.$(`#${nodeId}`);
+  node.neighborhood().forEach((ele) => {
+    console.log(ele.data());
+  });
+}
 
-// 修改多个属性
-element.data({
-  label: "新标签",
-  weight: 100,
-});
+// Traverse all connected edges
+function traverseConnectedEdges(nodeId) {
+  const node = cy.$(`#${nodeId}`);
+  node.connectedEdges().forEach((edge) => {
+    console.log(edge.data());
+  });
+}
+
+// Get path
+function getPath(sourceId, targetId) {
+  const path = cy.$(`#${sourceId}`).shortestPath(cy.$(`#${targetId}`));
+  return path;
+}
 ```
 
-## 位置操作
-
-### 获取位置
+### Collection Operations
 
 ```javascript
-const position = node.position();
-const x = position.x;
-const y = position.y;
+// Union collections
+const collection1 = cy.$(".type1");
+const collection2 = cy.$(".type2");
+const combined = collection1.union(collection2);
+
+// Intersection
+const intersection = collection1.intersection(collection2);
+
+// Difference
+const difference = collection1.difference(collection2);
 ```
 
-### 设置位置
+## Data Management
+
+### Data Storage
 
 ```javascript
-// 设置单个坐标
-node.position("x", 100);
-
-// 设置完整位置
-node.position({
-  x: 100,
-  y: 200,
-});
-```
-
-## 事件处理
-
-Cytoscape.js 支持多种交互事件：
-
-```javascript
-// 点击事件
-cy.on("tap", "node", function (evt) {
-  const node = evt.target;
-  console.log("点击了节点:", node.id());
-});
-
-// 选择事件
-cy.on("select", "node", function (evt) {
-  const node = evt.target;
-  console.log("选择了节点:", node.id());
+// Store data on elements
+cy.$("#a").data({
+  weight: 75,
+  type: "user",
+  metadata: {
+    created: Date.now(),
+    status: "active",
+  },
 });
 
-// 拖动事件
-cy.on("dragfree", "node", function (evt) {
-  const node = evt.target;
-  console.log("拖动结束:", node.position());
-});
+// Get data
+const weight = cy.$("#a").data("weight");
+const metadata = cy.$("#a").data("metadata");
 ```
 
-## 最佳实践
-
-1. 始终为元素指定唯一的 ID
-2. 使用有意义的标签和数据属性
-3. 合理组织数据结构
-4. 使用选择器优化元素查询
-5. 批量操作时使用事务以提高性能
+### Batch Data Operations
 
 ```javascript
-// 使用事务进行批量操作
+// Batch update data
 cy.batch(() => {
-  for (let i = 0; i < 100; i++) {
-    addNode();
-  }
+  cy.nodes().forEach((node) => {
+    node.data("visited", true);
+    node.data("timestamp", Date.now());
+  });
 });
 ```
+
+## Key Concepts Explanation
+
+1. **Element Selectors**
+
+   - `cy.$()`: Use selectors to find elements
+   - `:selected`: Selected state elements
+   - `node:selected`: Selected state nodes
+   - `[attributeName]`: Attribute selectors
+   - `.className`: Class selectors
+   - `#id`: ID selectors
+
+2. **Element Data**
+
+   - `data`: Store element data (e.g., id, label, etc.)
+   - `position`: Node position information (nodes only)
+   - `scratch`: Temporary data storage (not serialized)
+
+3. **Element Operations**
+
+   - `cy.add()`: Add new elements
+   - `remove()`: Delete elements
+   - `data()`: Get or set element data
+   - `position()`: Get or set node position
+   - `move()`: Move node position
+
+4. **Collection Operations**
+
+   - `union()`: Merge collections
+   - `intersection()`: Get intersection
+   - `difference()`: Get difference
+   - `filter()`: Filter elements
+   - `not()`: Exclude elements
+
+5. **Traversal Methods**
+
+   - `neighborhood()`: Get neighboring elements
+   - `connectedEdges()`: Get connected edges
+   - `predecessors()`: Get predecessor nodes
+   - `successors()`: Get successor nodes
+   - `components()`: Get connected components
+
+6. **Performance Optimization**
+
+   - Use `cy.batch()` for batch operations
+   - Cache frequently used selector results
+   - Use `eles.forEach()` instead of `for` loops
+   - Use event delegation appropriately

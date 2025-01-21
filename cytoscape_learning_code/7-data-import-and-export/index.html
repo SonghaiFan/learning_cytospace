@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - Data Import and Export</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+      #file-input {
+        display: none;
+      }
+      #data-preview {
+        width: 600px;
+        margin: 20px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+        white-space: pre;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>Data Import and Export Example</h1>
+      <div>
+        <button onclick="exportJSON()" title="Export as JSON format">
+          Export JSON
+        </button>
+        <button onclick="exportCSV()" title="Export as CSV format">
+          Export CSV
+        </button>
+        <button onclick="exportImage()" title="Export as PNG image">
+          Export Image
+        </button>
+      </div>
+      <div>
+        <input type="file" id="file-input" accept=".json,.csv" />
+        <button onclick="document.getElementById('file-input').click()">
+          Choose File
+        </button>
+        <button onclick="importData()" title="Import data from selected file">
+          Import Data
+        </button>
+        <button onclick="resetGraph()" title="Reset graph to initial state">
+          Reset Graph
+        </button>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div id="data-preview">
+      <strong>Data Preview:</strong>
+      <div id="preview-content"></div>
+    </div>
+    <script>
+      // Initialize Cytoscape instance
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // Nodes
+          { data: { id: "a", label: "A", type: "user" } },
+          { data: { id: "b", label: "B", type: "user" } },
+          { data: { id: "c", label: "C", type: "group" } },
+          { data: { id: "d", label: "D", type: "user" } },
+          // Edges
+          {
+            data: {
+              id: "ab",
+              source: "a",
+              target: "b",
+              type: "friend",
+              weight: 1,
+            },
+          },
+          {
+            data: {
+              id: "bc",
+              source: "b",
+              target: "c",
+              type: "member",
+              weight: 2,
+            },
+          },
+          {
+            data: {
+              id: "cd",
+              source: "c",
+              target: "d",
+              type: "member",
+              weight: 1,
+            },
+          },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+              "curve-style": "bezier",
+            },
+          },
+        ],
+        layout: { name: "grid" },
+      });
+
+      // Export as JSON
+      function exportJSON() {
+        const data = cy.json();
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        saveAs(blob, "graph.json");
+        showPreview(JSON.stringify(data, null, 2));
+      }
+
+      // Export as CSV
+      function exportCSV() {
+        // Nodes CSV
+        let nodesCSV = "id,label,type\n";
+        cy.nodes().forEach((node) => {
+          const data = node.data();
+          nodesCSV += `${data.id},${data.label},${data.type}\n`;
+        });
+
+        // Edges CSV
+        let edgesCSV = "id,source,target,type,weight\n";
+        cy.edges().forEach((edge) => {
+          const data = edge.data();
+          edgesCSV += `${data.id},${data.source},${data.target},${data.type},${data.weight}\n`;
+        });
+
+        const blob = new Blob(["Nodes:\n", nodesCSV, "\nEdges:\n", edgesCSV], {
+          type: "text/csv",
+        });
+        saveAs(blob, "graph.csv");
+        showPreview("Nodes:\n" + nodesCSV + "\nEdges:\n" + edgesCSV);
+      }
+
+      // Export as Image
+      function exportImage() {
+        const png64 = cy.png();
+        const link = document.createElement("a");
+        link.download = "graph.png";
+        link.href = png64;
+        link.click();
+        showPreview("Image has been exported as PNG format");
+      }
+
+      // Import Data
+      function importData() {
+        const file = document.getElementById("file-input").files[0];
+        if (!file) {
+          alert("Please select a file first");
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          try {
+            if (file.name.endsWith(".json")) {
+              const data = JSON.parse(e.target.result);
+              cy.json(data);
+              showPreview(JSON.stringify(data, null, 2));
+            } else if (file.name.endsWith(".csv")) {
+              // Parse CSV
+              const content = e.target.result;
+              const [nodesSection, edgesSection] = content.split("\nEdges:\n");
+              const nodes = parseCSV(nodesSection.replace("Nodes:\n", ""));
+              const edges = parseCSV(edgesSection);
+
+              // Update graph
+              cy.elements().remove();
+              nodes.forEach((node) => {
+                cy.add({
+                  group: "nodes",
+                  data: node,
+                });
+              });
+              edges.forEach((edge) => {
+                cy.add({
+                  group: "edges",
+                  data: edge,
+                });
+              });
+              cy.layout({ name: "grid" }).run();
+              showPreview(content);
+            }
+          } catch (error) {
+            alert("Import failed: " + error.message);
+          }
+        };
+
+        if (file.name.endsWith(".json")) {
+          reader.readAsText(file);
+        } else if (file.name.endsWith(".csv")) {
+          reader.readAsText(file);
+        } else {
+          alert("Unsupported file format");
+        }
+      }
+
+      // Parse CSV
+      function parseCSV(csv) {
+        const lines = csv.trim().split("\n");
+        const headers = lines[0].split(",");
+        return lines.slice(1).map((line) => {
+          const values = line.split(",");
+          const obj = {};
+          headers.forEach((header, i) => {
+            obj[header] = values[i];
+          });
+          return obj;
+        });
+      }
+
+      // Reset Graph
+      function resetGraph() {
+        cy.elements().remove();
+        cy.add([
+          // Nodes
+          { data: { id: "a", label: "A", type: "user" } },
+          { data: { id: "b", label: "B", type: "user" } },
+          { data: { id: "c", label: "C", type: "group" } },
+          { data: { id: "d", label: "D", type: "user" } },
+          // Edges
+          {
+            data: {
+              id: "ab",
+              source: "a",
+              target: "b",
+              type: "friend",
+              weight: 1,
+            },
+          },
+          {
+            data: {
+              id: "bc",
+              source: "b",
+              target: "c",
+              type: "member",
+              weight: 2,
+            },
+          },
+          {
+            data: {
+              id: "cd",
+              source: "c",
+              target: "d",
+              type: "member",
+              weight: 1,
+            },
+          },
+        ]);
+        cy.layout({ name: "grid" }).run();
+        showPreview("Graph has been reset to initial state");
+      }
+
+      // Show Preview
+      function showPreview(content) {
+        document.getElementById("preview-content").textContent = content;
+      }
+    </script>
+  </body>
+</html>

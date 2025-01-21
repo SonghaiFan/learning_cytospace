@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - Interactions and Event Handling</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <style>
+      #cy {
+        width: 600px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+      }
+      .event-log {
+        width: 600px;
+        height: 150px;
+        margin: 20px auto;
+        padding: 10px;
+        border: 1px solid #ccc;
+        overflow-y: auto;
+        font-family: monospace;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>Interactions and Event Handling Example</h1>
+      <div>
+        <h3>Interaction Controls</h3>
+        <button onclick="toggleZoom()">Toggle Zoom</button>
+        <button onclick="togglePan()">Toggle Pan</button>
+        <button onclick="toggleBoxSelection()">Toggle Box Selection</button>
+        <button onclick="toggleGrab()">Toggle Grab</button>
+      </div>
+      <div>
+        <h3>Selection Operations</h3>
+        <button onclick="selectAll()">Select All</button>
+        <button onclick="unselectAll()">Unselect All</button>
+        <button onclick="invertSelection()">Invert Selection</button>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div class="event-log" id="eventLog"></div>
+    <script>
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // Nodes
+          { data: { id: "a", label: "Node A" } },
+          { data: { id: "b", label: "Node B" } },
+          { data: { id: "c", label: "Node C" } },
+          // Edges
+          { data: { id: "ab", source: "a", target: "b", label: "Edge AB" } },
+          { data: { id: "bc", source: "b", target: "c", label: "Edge BC" } },
+          { data: { id: "ca", source: "c", target: "a", label: "Edge CA" } },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+              "text-valign": "center",
+              "text-halign": "center",
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 3,
+              "line-color": "#999",
+              "curve-style": "bezier",
+              "target-arrow-shape": "triangle",
+              label: "data(label)",
+            },
+          },
+          {
+            selector: ":selected",
+            style: {
+              "background-color": "#900",
+              "line-color": "#900",
+              "target-arrow-color": "#900",
+              "source-arrow-color": "#900",
+            },
+          },
+          {
+            selector: ":active",
+            style: {
+              "overlay-color": "#000",
+              "overlay-padding": 10,
+              "overlay-opacity": 0.25,
+            },
+          },
+        ],
+        layout: { name: "circle" },
+        // Interaction settings
+        userZoomingEnabled: true,
+        userPanningEnabled: true,
+        boxSelectionEnabled: true,
+        selectionType: "single",
+      });
+
+      // Event logging
+      const eventLog = document.getElementById("eventLog");
+      function logEvent(event) {
+        const log = document.createElement("div");
+        log.textContent = `${new Date().toLocaleTimeString()} - ${event}`;
+        eventLog.insertBefore(log, eventLog.firstChild);
+        if (eventLog.children.length > 50) {
+          eventLog.removeChild(eventLog.lastChild);
+        }
+      }
+
+      // Interaction control functions
+      function toggleZoom() {
+        const enabled = cy.userZoomingEnabled();
+        cy.userZoomingEnabled(!enabled);
+        logEvent(`Zoom ${!enabled ? "enabled" : "disabled"}`);
+      }
+
+      function togglePan() {
+        const enabled = cy.userPanningEnabled();
+        cy.userPanningEnabled(!enabled);
+        logEvent(`Pan ${!enabled ? "enabled" : "disabled"}`);
+      }
+
+      function toggleBoxSelection() {
+        const enabled = cy.boxSelectionEnabled();
+        cy.boxSelectionEnabled(!enabled);
+        logEvent(`Box selection ${!enabled ? "enabled" : "disabled"}`);
+      }
+
+      function toggleGrab() {
+        const enabled = !cy.nodes().grabifiable();
+        cy.nodes().grabifiable(enabled);
+        logEvent(`Node grabbing ${enabled ? "enabled" : "disabled"}`);
+      }
+
+      // Selection operation functions
+      function selectAll() {
+        cy.elements().select();
+        logEvent("Selected all elements");
+      }
+
+      function unselectAll() {
+        cy.elements().unselect();
+        logEvent("Unselected all elements");
+      }
+
+      function invertSelection() {
+        cy.elements().forEach((ele) => {
+          if (ele.selected()) {
+            ele.unselect();
+          } else {
+            ele.select();
+          }
+        });
+        logEvent("Inverted all selections");
+      }
+
+      // Event listeners
+      cy.on("tap", "node", function (evt) {
+        const node = evt.target;
+        logEvent(`Clicked node: ${node.data("label")}`);
+      });
+
+      cy.on("tap", "edge", function (evt) {
+        const edge = evt.target;
+        logEvent(`Clicked edge: ${edge.data("label")}`);
+      });
+
+      cy.on("select", "node, edge", function (evt) {
+        const ele = evt.target;
+        logEvent(`Selected element: ${ele.data("label")}`);
+      });
+
+      cy.on("unselect", "node, edge", function (evt) {
+        const ele = evt.target;
+        logEvent(`Unselected element: ${ele.data("label")}`);
+      });
+
+      cy.on("mouseover", "node, edge", function (evt) {
+        const ele = evt.target;
+        logEvent(`Mouse over: ${ele.data("label")}`);
+      });
+
+      cy.on("dragfree", "node", function (evt) {
+        const node = evt.target;
+        const pos = node.position();
+        logEvent(
+          `Node drag ended: ${node.data("label")} (${Math.round(
+            pos.x
+          )}, ${Math.round(pos.y)})`
+        );
+      });
+
+      cy.on("zoom", function (evt) {
+        logEvent(`Zoom level: ${Math.round(cy.zoom() * 100) / 100}`);
+      });
+
+      cy.on("pan", function (evt) {
+        const pan = cy.pan();
+        logEvent(`Canvas panned: (${Math.round(pan.x)}, ${Math.round(pan.y)})`);
+      });
+    </script>
+  </body>
+</html>

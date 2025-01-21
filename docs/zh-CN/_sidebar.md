@@ -1,0 +1,9 @@
+- [首页](zh-CN/)
+- 基础教程
+  - [1. 环境搭建与初始化](zh-CN/chapters/1/)
+  - [2. 节点与边的基础操作](zh-CN/chapters/2/)
+  - [3. 布局与视图控制](zh-CN/chapters/3/)
+  - [4. 样式与视觉效果](zh-CN/chapters/4/)
+  - [5. 交互与事件处理](zh-CN/chapters/5/)
+  - [6. 图算法与分析](zh-CN/chapters/6/)
+  - [7. 数据导入导出](zh-CN/chapters/7/)

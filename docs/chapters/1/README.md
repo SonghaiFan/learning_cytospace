@@ -1,32 +1,44 @@
-# 1. 环境搭建与初始化
+# 1. Environment Setup and Initialization
 
-> [查看示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/1-环境搭建与初始化) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-环境搭建与初始化/index.html)
+> [View Example Code](../examples/1-environment-setup-and-initialization/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/1-environment-setup-and-initialization/index.html)
 
-本章节将介绍如何使用 Cytoscape.js 构建图可视化应用。我们将通过两种实现方式来展示：
+This chapter will introduce how to build a basic Cytoscape.js graph visualization application using pure JavaScript (Vanilla JS).
 
-1. VanillaJS 方式：使用纯 HTML 和 JavaScript
-2. React 方式：使用 TypeScript 和 Next.js
+## Basic Environment Configuration
 
-## VanillaJS 实现
+### CDN Integration
 
-### 基础环境配置
-
-1. 创建一个新的 HTML 文件
-2. 通过 CDN 引入 Cytoscape.js：
+Include Cytoscape.js via CDN:
 
 ```html
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
 ```
 
-### 基本页面结构
+### NPM Installation
+
+If you're using Node.js, you can install via NPM:
+
+```bash
+npm install cytoscape
+```
+
+Then import in your code:
+
+```javascript
+import cytoscape from "cytoscape";
+```
+
+## Page Structure
+
+Create a basic HTML structure with a container for the graph:
 
 ```html
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Cytoscape.js - VanillaJS实现</title>
+    <title>Cytoscape.js Basic Example</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
     <style>
       #cy {
@@ -34,33 +46,35 @@
         height: 400px;
         border: 1px solid #ccc;
         margin: 20px auto;
-      }
-      .controls {
-        text-align: center;
-        margin: 20px;
+        /* Important: container must have a fixed height */
+        position: relative;
       }
     </style>
   </head>
   <body>
-    <div class="controls">
-      <h1>Cytoscape.js VanillaJS实现示例</h1>
-    </div>
     <div id="cy"></div>
   </body>
 </html>
 ```
 
-### 初始化图实例
+## Initialize Graph Instance
+
+Add the following JavaScript code at the bottom of the HTML file:
 
 ```javascript
 const cy = cytoscape({
-  // 容器元素
+  // Container element
   container: document.getElementById("cy"),
 
-  // 图中的元素（节点和边）
-  elements: [],
+  // Elements in the graph (nodes and edges)
+  elements: [
+    // Sample data
+    { data: { id: "a" } }, // Node a
+    { data: { id: "b" } }, // Node b
+    { data: { id: "ab", source: "a", target: "b" } }, // Edge from a to b
+  ],
 
-  // 样式定义
+  // Style definitions
   style: [
     {
       selector: "node",
@@ -74,196 +88,119 @@ const cy = cytoscape({
       style: {
         width: 2,
         "line-color": "#999",
+        "curve-style": "bezier", // Important: set edge curve style
       },
     },
   ],
 
-  // 布局配置
+  // Layout configuration
   layout: {
-    name: "grid",
+    name: "grid", // Grid layout
+    rows: 2, // Optional: specify number of rows
+    cols: 2, // Optional: specify number of columns
   },
+
+  // Performance-related configuration
+  minZoom: 0.1, // Minimum zoom level
+  maxZoom: 10, // Maximum zoom level
+  wheelSensitivity: 0.2, // Mouse wheel sensitivity
+  pixelRatio: "auto", // Pixel ratio, can be a number or 'auto'
 });
 ```
 
-## React 实现
+## Core Configuration Explanation
 
-### 项目初始化
+### Basic Configuration Parameters
 
-1. 创建 Next.js 项目：
+1. `container`: Specifies which DOM element the graph will render in
 
-```bash
-npx create-next-app@latest my-cytoscape-app --typescript
-cd my-cytoscape-app
-```
+   - Must be a DOM element
+   - Container must have a fixed height
+   - Recommended to set `position: relative`
 
-2. 安装依赖：
+2. `elements`: Defines nodes and edges in the graph
 
-```bash
-npm install cytoscape @types/cytoscape
-```
+   - Nodes must have unique `id`s
+   - Edges must have `source` and `target`
+   - Can include custom data
 
-### 创建 Cytoscape 组件
+3. `style`: Defines visual styles for elements
 
-创建 `src/components/CytoscapeGraph.tsx`：
+   - Uses selectors to target elements
+   - Supports various visual properties
+   - Can reference element data
 
-```typescript
-"use client";
+4. `layout`: Specifies the graph layout algorithm
+   - Multiple built-in layout algorithms
+   - Each layout has specific parameters
+   - Can switch layouts dynamically
 
-import { useEffect, useRef } from "react";
-import cytoscape from "cytoscape";
+### Performance Optimization Configuration
 
-interface CytoscapeGraphProps {
-  elements?: cytoscape.ElementDefinition[];
-  style?: cytoscape.Stylesheet[];
-  layout?: cytoscape.LayoutOptions;
-  className?: string;
-}
+1. **Rendering Optimization**
 
-export function CytoscapeGraph({
-  elements = [],
-  style = [],
-  layout = { name: "grid" },
-  className = "",
-}: CytoscapeGraphProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cyRef = useRef<cytoscape.Core | null>(null);
+   - `textureOnViewport`: Use textures on viewport (suitable for large graphs)
+   - `pixelRatio`: Control rendering resolution
+   - `hideEdgesOnViewport`: Hide edges during panning
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+2. **Interaction Optimization**
 
-    cyRef.current = cytoscape({
-      container: containerRef.current,
-      elements,
-      style,
-      layout,
-    });
+   - `minZoom` and `maxZoom`: Limit zoom range
+   - `wheelSensitivity`: Control scroll wheel sensitivity
+   - `autoungrabify`: Disable node dragging
+   - `autounselectify`: Disable element selection
 
-    return () => {
-      if (cyRef.current) {
-        cyRef.current.destroy();
-        cyRef.current = null;
-      }
-    };
-  }, []);
+3. **Memory Optimization**
+   - Use `cy.destroy()` to clean up unused instances
+   - For large graphs, consider using `headless: true` for background calculations
 
-  useEffect(() => {
-    if (!cyRef.current) return;
-    cyRef.current.elements().remove();
-    cyRef.current.add(elements);
-    cyRef.current.layout(layout).run();
-  }, [elements, layout]);
+### Debugging and Development
 
-  useEffect(() => {
-    if (!cyRef.current) return;
-    cyRef.current.style(style);
-  }, [style]);
+1. **Development Tools**
 
-  return (
-    <div
-      ref={containerRef}
-      className={`w-full h-[600px] border border-gray-200 rounded-lg ${className}`}
-    />
-  );
-}
-```
+   ```javascript
+   // Access instance in console
+   window.cy = cy;
+   ```
 
-### 使用组件
+2. **Event Listening**
 
-在页面中使用 (`src/app/page.tsx`)：
+   ```javascript
+   cy.on("ready", () => {
+     console.log("Graph initialization complete");
+   });
+   ```
 
-```typescript
-import { CytoscapeGraph } from "@/components/CytoscapeGraph";
+3. **Error Handling**
+   ```javascript
+   try {
+     const cy = cytoscape(options);
+   } catch (error) {
+     console.error("Initialization failed:", error);
+   }
+   ```
 
-export default function Home() {
-  const elements = [
-    { data: { id: "a", label: "节点 A" } },
-    { data: { id: "b", label: "节点 B" } },
-    { data: { id: "ab", source: "a", target: "b", label: "关系 AB" } },
-  ];
+## Best Practices
 
-  const style = [
-    {
-      selector: "node",
-      style: {
-        "background-color": "#666",
-        label: "data(label)",
-      },
-    },
-    {
-      selector: "edge",
-      style: {
-        width: 2,
-        "line-color": "#999",
-        label: "data(label)",
-      },
-    },
-  ];
+1. **Container Setup**
 
-  return (
-    <main className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Cytoscape React 示例</h1>
-      <CytoscapeGraph
-        elements={elements}
-        style={style}
-        layout={{ name: "grid" }}
-      />
-    </main>
-  );
-}
-```
+   - Ensure container has clear dimensions
+   - Use `position: relative`
+   - Consider responsive design
 
-## 实现方式对比
+2. **Initialization Timing**
 
-### VanillaJS 方式
+   - Initialize after DOM is loaded
+   - Use `DOMContentLoaded` event
+   - Ensure dependencies are loaded
 
-优点：
+3. **Performance Considerations**
 
-- 简单直接，无需构建工具
-- 适合快速原型开发
-- 容易集成到现有网页
+   - Set appropriate `minZoom` and `maxZoom`
+   - Consider performance options for large graphs
+   - Mind memory management and cleanup
 
-缺点：
-
-- 缺乏类型检查
-- 不易维护和扩展
-- 难以复用代码
-
-### React 方式
-
-优点：
-
-- 类型安全（TypeScript）
-- 组件化和可复用
-- 响应式更新
-- 更好的代码组织
-- 完整的开发工具链
-
-缺点：
-
-- 需要构建工具
-- 学习曲线较陡
-- 初始设置较复杂
-
-## 核心配置参数
-
-无论使用哪种方式，Cytoscape.js 的核心配置参数都包括：
-
-1. `container`: 图实例的容器元素
-2. `elements`: 图中的节点和边定义
-3. `style`: 图的样式规则
-4. `layout`: 图的布局算法和参数
-
-这些参数可以在初始化时设置，也可以在运行时动态修改。
-
-## 后续章节说明
-
-从下一章开始，所有功能示例都将同时提供两种实现方式：
-
-1. 传统方式：使用纯 HTML 和 JavaScript 的实现
-2. React 方式：使用 TypeScript 和 React 组件的实现
-
-这样可以帮助你：
-
-- 理解不同实现方式的差异
-- 选择适合自己项目的方案
-- 掌握两种技术栈的最佳实践
+4. **Development Tips**
+   - Use browser developer tools for debugging
+   - Keep code modular
+   - Implement proper error handling

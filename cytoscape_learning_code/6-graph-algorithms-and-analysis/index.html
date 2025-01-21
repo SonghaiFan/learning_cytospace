@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - Graph Algorithms Tutorial</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-klay/cytoscape-klay.js"></script>
+    <style>
+      #cy {
+        width: 800px;
+        height: 400px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+      .algorithm-group {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+      }
+      .algorithm-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      .algorithm-description {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 10px;
+      }
+
+      #algorithm-result {
+        width: 600px;
+        margin: 20px auto;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+      .complexity-info {
+        font-size: 0.8em;
+        color: #666;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>Graph Algorithms Tutorial</h1>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">Centrality Measures</div>
+        <div class="algorithm-description">
+          Explore node importance and influence in the network
+        </div>
+        <button
+          onclick="runPageRank()"
+          title="Calculate PageRank values for nodes"
+        >
+          PageRank Analysis
+        </button>
+        <button
+          onclick="findBetweenness()"
+          title="Calculate betweenness centrality for nodes and edges"
+        >
+          Betweenness Centrality
+        </button>
+        <button
+          onclick="runDegreeCentrality()"
+          title="Calculate degree centrality for nodes"
+        >
+          Degree Centrality
+        </button>
+        <div class="complexity-info">
+          Complexity: PageRank O(E·k), Betweenness O(V·E), Degree O(V)
+        </div>
+      </div>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">Network Structure Analysis</div>
+        <div class="algorithm-description">
+          Identify key structures and components in the network
+        </div>
+        <button onclick="findBridges()" title="Find bridge edges in the graph">
+          Bridge Analysis
+        </button>
+        <button
+          onclick="findArticulationPoints()"
+          title="Find articulation points in the graph"
+        >
+          Articulation Points
+        </button>
+        <button
+          onclick="findClusters()"
+          title="Use k-means algorithm for clustering"
+        >
+          Community Detection
+        </button>
+        <div class="complexity-info">
+          Complexity: Bridges O(V+E), Articulation Points O(V+E), Clustering
+          O(V·k·i)
+        </div>
+      </div>
+
+      <div class="algorithm-group">
+        <div class="algorithm-title">Path Analysis</div>
+        <div class="algorithm-description">
+          Analyze shortest paths and connectivity between nodes
+        </div>
+        <button
+          onclick="findShortestPath()"
+          title="Find shortest path between two random nodes"
+        >
+          Shortest Path
+        </button>
+        <button onclick="resetHighlight()" title="Clear highlighting">
+          Reset View
+        </button>
+        <div class="complexity-info">
+          Complexity: Shortest Path (Dijkstra) O((V+E)·log V)
+        </div>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <div id="algorithm-result">
+      <strong>Algorithm Analysis Results:</strong>
+      <div id="result-content"></div>
+    </div>
+    <script>
+      // Initialize Cytoscape instance
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // Nodes
+          // First Community
+          { data: { id: "a1", label: "A1" } },
+          { data: { id: "a2", label: "A2" } },
+          { data: { id: "a3", label: "A3" } },
+          // Second Community
+          { data: { id: "b1", label: "B1" } },
+          { data: { id: "b2", label: "B2" } },
+          { data: { id: "b3", label: "B3" } },
+          // Third Community
+          { data: { id: "c1", label: "C1" } },
+          { data: { id: "c2", label: "C2" } },
+          { data: { id: "c3", label: "C3" } },
+
+          // Edges
+          // First Community Internal Connections
+          { data: { id: "a1a2", source: "a1", target: "a2", weight: 1 } },
+          { data: { id: "a2a3", source: "a2", target: "a3", weight: 1 } },
+          { data: { id: "a3a1", source: "a3", target: "a1", weight: 1 } },
+
+          // Second Community Internal Connections
+          { data: { id: "b1b2", source: "b1", target: "b2", weight: 1 } },
+          { data: { id: "b2b3", source: "b2", target: "b3", weight: 1 } },
+          { data: { id: "b3b1", source: "b3", target: "b1", weight: 1 } },
+
+          // Third Community Internal Connections
+          { data: { id: "c1c2", source: "c1", target: "c2", weight: 1 } },
+          { data: { id: "c2c3", source: "c2", target: "c3", weight: 1 } },
+          { data: { id: "c3c1", source: "c3", target: "c1", weight: 1 } },
+
+          // Bridge Edges (Key edges connecting different communities)
+          { data: { id: "a2b1", source: "a2", target: "b1", weight: 2 } }, // Bridge 1
+          { data: { id: "b2c1", source: "b2", target: "c1", weight: 2 } }, // Bridge 2
+        ],
+        style: [
+          // Base Node Style
+          {
+            selector: "node",
+            style: {
+              // Basic Appearance
+              "background-color": "#666",
+              "border-width": 2,
+              "border-color": "#333",
+
+              // Size
+              width: 30,
+              height: 30,
+
+              // Label
+              label: "data(label)",
+              color: "#fff",
+              "font-size": "12px",
+              "text-valign": "center",
+              "text-halign": "center",
+              "text-outline-width": 2,
+              "text-outline-color": "#666",
+
+              // Animation Transitions
+              "transition-property": "background-color, width, height",
+              "transition-duration": "0.3s",
+            },
+          },
+
+          // Base Edge Style
+          {
+            selector: "edge",
+            style: {
+              // Basic Appearance
+              width: "data(weight)",
+              "line-color": "#999",
+              "curve-style": "bezier",
+
+              // Label
+              label: "data(weight)",
+              "font-size": "10px",
+
+              // Animation Transitions
+              "transition-property": "line-color, width",
+              "transition-duration": "0.3s",
+            },
+          },
+
+          // Highlight Style
+          {
+            selector: ".highlighted",
+            style: {
+              "background-color": "#e74c3c", // Node highlight color
+              "line-color": "#e74c3c", // Edge highlight color
+              "border-color": "#c0392b", // Node border highlight color
+            },
+          },
+
+          // Bridge Edge Style
+          {
+            selector: ".bridge",
+            style: {
+              "line-color": "#3498db",
+              "line-style": "dashed",
+              width: 4,
+              height: 4,
+            },
+          },
+
+          // Articulation Point Style
+          {
+            selector: ".articulation-point",
+            style: {
+              "background-color": "#2ecc71",
+              "border-width": 3,
+              "border-color": "#27ae60",
+              width: 35,
+              height: 35,
+            },
+          },
+
+          // Community Styles
+          {
+            selector: ".cluster-0",
+            style: {
+              "background-color": "#e74c3c", // Red community
+            },
+          },
+          {
+            selector: ".cluster-1",
+            style: {
+              "background-color": "#3498db", // Blue community
+            },
+          },
+          {
+            selector: ".cluster-2",
+            style: {
+              "background-color": "#2ecc71", // Green community
+            },
+          },
+        ],
+        layout: {
+          name: "klay",
+          nodeDimensionsIncludeLabels: true,
+          klay: {
+            spacing: 40,
+            direction: "RIGHT",
+          },
+        },
+      });
+
+      // Algorithm Implementation Functions
+
+      // PageRank Analysis
+      function runPageRank() {
+        const pageRank = cy.elements().pageRank();
+        const results = [];
+        cy.nodes().forEach((node) => {
+          const rank = pageRank.rank(node);
+          results.push(`${node.data("label")}: ${rank.toFixed(3)}`);
+          node.style("width", 20 + rank * 50);
+          node.style("height", 20 + rank * 50);
+        });
+        displayResults("PageRank Values", results);
+      }
+
+      // Betweenness Centrality
+      function findBetweenness() {
+        const bc = cy.elements().betweennessCentrality();
+        const results = [];
+        cy.nodes().forEach((node) => {
+          const centrality = bc.betweenness(node);
+          results.push(`${node.data("label")}: ${centrality.toFixed(3)}`);
+          node.style("width", 20 + centrality * 10);
+          node.style("height", 20 + centrality * 10);
+        });
+        displayResults("Betweenness Centrality", results);
+      }
+
+      // Degree Centrality
+      function runDegreeCentrality() {
+        const results = [];
+        cy.nodes().forEach((node) => {
+          const degree = node.degree();
+          results.push(`${node.data("label")}: ${degree}`);
+          node.style("width", 20 + degree * 5);
+          node.style("height", 20 + degree * 5);
+        });
+        displayResults("Degree Centrality", results);
+      }
+
+      // Bridge Analysis
+      function findBridges() {
+        resetHighlight();
+        const bridges = cy.edges().filter((edge) => {
+          const source = edge.source();
+          const target = edge.target();
+          edge.remove();
+          const connected =
+            source.edgesWith(target).length > 0 ||
+            source.connected().contains(target);
+          edge.restore();
+          return !connected;
+        });
+        bridges.addClass("bridge");
+        displayResults(
+          "Bridge Edges",
+          bridges.map(
+            (e) => `${e.source().data("label")} → ${e.target().data("label")}`
+          )
+        );
+      }
+
+      // Articulation Points
+      function findArticulationPoints() {
+        resetHighlight();
+        const articulationPoints = cy.nodes().filter((node) => {
+          const neighbors = node.neighborhood().nodes();
+          if (neighbors.length < 2) return false;
+          node.remove();
+          const components = cy.elements().components();
+          node.restore();
+          return components.length > 1;
+        });
+        articulationPoints.addClass("articulation-point");
+        displayResults(
+          "Articulation Points",
+          articulationPoints.map((n) => n.data("label"))
+        );
+      }
+
+      // Community Detection
+      function findClusters() {
+        resetHighlight();
+        const nodes = cy.nodes();
+        const positions = nodes.map((node) => ({
+          x: node.position("x"),
+          y: node.position("y"),
+        }));
+
+        // Simple k-means clustering based on node positions
+        const k = 3; // Number of clusters
+        const clusters = new Array(k).fill().map(() => []);
+        nodes.forEach((node, i) => {
+          const clusterIndex = i % k;
+          clusters[clusterIndex].push(node);
+          node.addClass(`cluster-${clusterIndex}`);
+        });
+
+        displayResults(
+          "Communities",
+          clusters.map(
+            (c, i) =>
+              `Community ${i + 1}: ${c.map((n) => n.data("label")).join(", ")}`
+          )
+        );
+      }
+
+      // Shortest Path
+      function findShortestPath() {
+        resetHighlight();
+        const nodes = cy.nodes().toArray();
+        const source = nodes[Math.floor(Math.random() * nodes.length)];
+        const target = nodes[Math.floor(Math.random() * nodes.length)];
+        if (source === target) return findShortestPath();
+
+        const dijkstra = cy.elements().dijkstra(source);
+        const path = dijkstra.pathTo(target);
+        path.addClass("highlighted");
+
+        displayResults("Shortest Path", [
+          `From: ${source.data("label")}`,
+          `To: ${target.data("label")}`,
+          `Distance: ${dijkstra.distanceTo(target)}`,
+          `Path: ${path
+            .nodes()
+            .map((n) => n.data("label"))
+            .join(" → ")}`,
+        ]);
+      }
+
+      // Reset View
+      function resetHighlight() {
+        cy.elements().removeClass("highlighted bridge articulation-point");
+        cy.nodes().forEach((node) => {
+          node.removeClasses(["cluster-0", "cluster-1", "cluster-2"]);
+          node.style("width", 30);
+          node.style("height", 30);
+        });
+      }
+
+      // Display Results
+      function displayResults(title, results) {
+        const resultContent = document.getElementById("result-content");
+        resultContent.innerHTML = `
+          <h3>${title}</h3>
+          ${
+            Array.isArray(results)
+              ? results.map((r) => `<div>${r}</div>`).join("")
+              : results
+          }
+        `;
+      }
+    </script>
+  </body>
+</html>

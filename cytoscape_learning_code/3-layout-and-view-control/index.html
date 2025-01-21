@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cytoscape.js - Layout and View Control</title>
+    <!-- Core Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+
+    <!-- Base Dependencies -->
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://unpkg.com/avsdf-base/avsdf-base.js"></script>
+
+    <!-- Cola Layout Dependencies -->
+    <script src="https://unpkg.com/webcola/WebCola/cola.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-cola/cytoscape-cola.js"></script>
+
+    <!-- Dagre Layout -->
+    <script src="https://unpkg.com/dagre/dist/dagre.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-dagre/cytoscape-dagre.js"></script>
+
+    <!-- ELK Layout Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/elkjs@0.9.3/lib/elk.bundled.js"></script>
+    <script src="https://unpkg.com/cytoscape-elk@2.3.0/dist/cytoscape-elk.js"></script>
+
+    <!-- Other Layout Extensions -->
+    <script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+    <script src="https://unpkg.com/cytoscape-cose-bilkent/cytoscape-cose-bilkent.js"></script>
+    <script src="https://unpkg.com/cytoscape-cise/cytoscape-cise.js"></script>
+
+    <style>
+      #cy {
+        width: 800px;
+        height: 600px;
+        border: 1px solid #ccc;
+        margin: 20px auto;
+      }
+      .controls {
+        text-align: center;
+        margin: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .control-groups {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+
+      .control-group {
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+      }
+
+      .description {
+        font-size: 14px;
+        color: #666;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h1>Layout and View Control Example</h1>
+      <div class="control-groups">
+        <div class="control-group">
+          <h3>Discrete Layouts</h3>
+          <div class="description">
+            Fast and deterministic geometric layouts with fixed node positions
+          </div>
+          <button onclick="changeLayout('grid')">Grid</button>
+          <button onclick="changeLayout('circle')">Circle</button>
+          <button onclick="changeLayout('concentric')">Concentric</button>
+          <button onclick="changeLayout('breadthfirst')">Breadthfirst</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Force-directed Layouts</h3>
+          <div class="description">
+            Physics-based iterative layouts, ideal for complex relationships
+          </div>
+          <button onclick="changeLayout('fcose')">fCoSE</button>
+          <button onclick="changeLayout('cose-bilkent')">CoSE-Bilkent</button>
+          <button onclick="changeLayout('cola')">Cola</button>
+          <button onclick="changeLayout('cose')">CoSE</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Hierarchical Layouts</h3>
+          <div class="description">
+            Specialized for directed graphs with hierarchy
+          </div>
+          <button onclick="changeLayout('dagre')">Dagre</button>
+          <button onclick="changeLayout('elk')">ELK</button>
+          <button onclick="changeLayout('cise')">CiSE</button>
+        </div>
+
+        <div class="control-group">
+          <h3>Subgraph Layout</h3>
+          <div class="description">
+            Apply layouts to selected nodes and their neighbors while preserving
+            others
+          </div>
+          <button onclick="applyLayoutToSelected('concentric')">
+            Concentric Layout
+          </button>
+          <button onclick="applyLayoutToSelected('cose')">CoSE Layout</button>
+          <button onclick="applyLayoutToSelected('fcose')">
+            F-CoSE Layout
+          </button>
+          <button onclick="resetLayout()">Reset Layout</button>
+        </div>
+
+        <div class="control-group">
+          <h3>View Control</h3>
+          <div class="description">Zoom, pan and center operations</div>
+          <button onclick="zoomIn()">Zoom In</button>
+          <button onclick="zoomOut()">Zoom Out</button>
+          <button onclick="fitView()">Fit View</button>
+          <button onclick="centerView()">Center View</button>
+        </div>
+      </div>
+    </div>
+    <div id="cy"></div>
+    <script>
+      // Register layout extensions
+      // Note: In browser environment, extensions are registered automatically
+      // The following code is for reference, showing how to register in a modular environment
+      /*
+      // ES Modules
+      import cytoscape from 'cytoscape';
+      import cola from 'cytoscape-cola';
+      import dagre from 'cytoscape-dagre';
+      import elk from 'cytoscape-elk';
+      import fcose from 'cytoscape-fcose';
+      import coseBilkent from 'cytoscape-cose-bilkent';
+      import cise from 'cytoscape-cise';
+
+      cytoscape.use(cola);
+      cytoscape.use(dagre);
+      cytoscape.use(elk);
+      cytoscape.use(fcose);
+      cytoscape.use(coseBilkent);
+      cytoscape.use(cise);
+
+      // CommonJS
+      const cytoscape = require('cytoscape');
+      const cola = require('cytoscape-cola');
+      // ... other requires
+      
+      cytoscape.use(cola);
+      // ... register other layouts
+
+      // AMD
+      require(['cytoscape', 'cytoscape-cola'], function(cytoscape, cola) {
+        cola(cytoscape);
+      });
+      */
+
+      const cy = cytoscape({
+        container: document.getElementById("cy"),
+        elements: [
+          // Cluster 1: Circular Structure (Suitable for CiSE layout)
+          { data: { id: "a1", label: "A1", group: "cluster1" } },
+          { data: { id: "a2", label: "A2", group: "cluster1" } },
+          { data: { id: "a3", label: "A3", group: "cluster1" } },
+          { data: { id: "a4", label: "A4", group: "cluster1" } },
+          { data: { id: "a5", label: "A5", group: "cluster1" } },
+          {
+            data: { id: "a1a2", source: "a1", target: "a2", group: "cluster1" },
+          },
+          {
+            data: { id: "a2a3", source: "a2", target: "a3", group: "cluster1" },
+          },
+          {
+            data: { id: "a3a4", source: "a3", target: "a4", group: "cluster1" },
+          },
+          {
+            data: { id: "a4a5", source: "a4", target: "a5", group: "cluster1" },
+          },
+          {
+            data: { id: "a5a1", source: "a5", target: "a1", group: "cluster1" },
+          },
+
+          // Cluster 2: Star Structure (Suitable for CoSE and FCose layouts)
+          { data: { id: "b1", label: "B1", group: "cluster2" } },
+          { data: { id: "b2", label: "B2", group: "cluster2" } },
+          { data: { id: "b3", label: "B3", group: "cluster2" } },
+          { data: { id: "b4", label: "B4", group: "cluster2" } },
+          { data: { id: "b5", label: "B5", group: "cluster2" } },
+          { data: { id: "b6", label: "B6", group: "cluster2" } },
+          {
+            data: { id: "b1b2", source: "b1", target: "b2", group: "cluster2" },
+          },
+          {
+            data: { id: "b1b3", source: "b1", target: "b3", group: "cluster2" },
+          },
+          {
+            data: { id: "b1b4", source: "b1", target: "b4", group: "cluster2" },
+          },
+          {
+            data: { id: "b1b5", source: "b1", target: "b5", group: "cluster2" },
+          },
+          {
+            data: { id: "b1b6", source: "b1", target: "b6", group: "cluster2" },
+          },
+
+          // Cluster 3: Hierarchical Structure (Suitable for Dagre and ELK layouts)
+          { data: { id: "c1", label: "C1", group: "cluster3" } },
+          { data: { id: "c2", label: "C2", group: "cluster3" } },
+          { data: { id: "c3", label: "C3", group: "cluster3" } },
+          { data: { id: "c4", label: "C4", group: "cluster3" } },
+          { data: { id: "c5", label: "C5", group: "cluster3" } },
+          { data: { id: "c6", label: "C6", group: "cluster3" } },
+          { data: { id: "c7", label: "C7", group: "cluster3" } },
+          {
+            data: { id: "c1c2", source: "c1", target: "c2", group: "cluster3" },
+          },
+          {
+            data: { id: "c1c3", source: "c1", target: "c3", group: "cluster3" },
+          },
+          {
+            data: { id: "c2c4", source: "c2", target: "c4", group: "cluster3" },
+          },
+          {
+            data: { id: "c2c5", source: "c2", target: "c5", group: "cluster3" },
+          },
+          {
+            data: { id: "c3c6", source: "c3", target: "c6", group: "cluster3" },
+          },
+          {
+            data: { id: "c3c7", source: "c3", target: "c7", group: "cluster3" },
+          },
+
+          // Inter-cluster connections (Demonstrates layout handling of large graphs)
+          {
+            data: {
+              id: "a1b1",
+              source: "a1",
+              target: "b1",
+              group: "intercluster",
+            },
+          },
+          {
+            data: {
+              id: "b1c1",
+              source: "b1",
+              target: "c1",
+              group: "intercluster",
+            },
+          },
+        ],
+        style: [
+          {
+            selector: "node",
+            style: {
+              "background-color": "#666",
+              label: "data(label)",
+              "text-valign": "center",
+              "text-halign": "center",
+              width: 40,
+              height: 40,
+            },
+          },
+          {
+            selector: "edge",
+            style: {
+              width: 2,
+              "line-color": "#999",
+              "curve-style": "bezier",
+              "target-arrow-shape": "triangle",
+            },
+          },
+          {
+            selector: ":selected",
+            style: {
+              "background-color": "#900",
+              "line-color": "#900",
+              "target-arrow-color": "#900",
+            },
+          },
+          {
+            selector: '[group="cluster1"]',
+            style: {
+              "background-color": "#e74c3c",
+              "line-color": "#c0392b",
+            },
+          },
+          {
+            selector: '[group="cluster2"]',
+            style: {
+              "background-color": "#3498db",
+              "line-color": "#2980b9",
+            },
+          },
+          {
+            selector: '[group="cluster3"]',
+            style: {
+              "background-color": "#2ecc71",
+              "line-color": "#27ae60",
+            },
+          },
+          {
+            selector: '[group="intercluster"]',
+            style: {
+              "line-style": "dashed",
+            },
+          },
+        ],
+        layout: { name: "grid" },
+      });
+
+      // Layout change function
+      function changeLayout(name) {
+        const layout = cy.layout({
+          name: name,
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+          // Common options for force-directed layouts
+          nodeRepulsion: 4500,
+          idealEdgeLength: 50,
+          edgeElasticity: 0.45,
+          nestingFactor: 0.1,
+          gravity: 0.25,
+          // Specific to hierarchical layouts
+          rankDir: "TB",
+          // Specific to discrete layouts
+          spacingFactor: 1.25,
+        });
+        layout.run();
+      }
+
+      // Apply layout to selected nodes and their neighbors
+      function applyLayoutToSelected(name) {
+        const selected = cy.$("node:selected");
+        if (selected.length === 0) {
+          alert("Please select at least one node");
+          return;
+        }
+
+        const neighborhood = selected.neighborhood().add(selected);
+        const layout = neighborhood.layout({
+          name: name,
+          animate: true,
+          animationDuration: 500,
+          padding: 30,
+        });
+        layout.run();
+      }
+
+      // Reset to default layout
+      function resetLayout() {
+        changeLayout("grid");
+      }
+
+      // View control functions
+      function zoomIn() {
+        cy.animate({
+          zoom: cy.zoom() * 1.2,
+          duration: 200,
+        });
+      }
+
+      function zoomOut() {
+        cy.animate({
+          zoom: cy.zoom() * 0.8,
+          duration: 200,
+        });
+      }
+
+      function fitView() {
+        cy.animate({
+          fit: {
+            padding: 30,
+          },
+          duration: 200,
+        });
+      }
+
+      function centerView() {
+        cy.animate({
+          center: {
+            eles: cy.elements(),
+          },
+          duration: 200,
+        });
+      }
+    </script>
+  </body>
+</html>

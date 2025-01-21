@@ -1,28 +1,28 @@
-# 5. Interaction and Event Handling
+# 5. 交互与事件处理
 
-> [View Example Code](../examples/5-interaction-and-event-handling/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-interaction-and-event-handling/index.html)
+> [查看示例代码](../examples/5-交互与事件处理/index.html) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/5-交互与事件处理/index.html)
 
-This chapter will introduce how to implement interaction control and event handling in Cytoscape.
+本章节将介绍如何在 Cytoscape.js 中实现交互控制和事件处理。
 
-## Basic Configuration
+## 基础配置
 
-Initialize a graph instance with interaction options:
+初始化图实例时设置交互选项：
 
 ```javascript
 const cy = cytoscape({
   container: document.getElementById("cy"),
   elements: [
-    // Nodes
-    { data: { id: "a", label: "Node A", weight: 75 } },
-    { data: { id: "b", label: "Node B", weight: 65 } },
-    { data: { id: "c", label: "Node C", weight: 85 } },
-    // Edges
+    // 节点
+    { data: { id: "a", label: "节点 A", weight: 75 } },
+    { data: { id: "b", label: "节点 B", weight: 65 } },
+    { data: { id: "c", label: "节点 C", weight: 85 } },
+    // 边
     {
       data: {
         id: "ab",
         source: "a",
         target: "b",
-        label: "Edge AB",
+        label: "边 AB",
         weight: 1,
       },
     },
@@ -31,7 +31,7 @@ const cy = cytoscape({
         id: "bc",
         source: "b",
         target: "c",
-        label: "Edge BC",
+        label: "边 BC",
         weight: 2,
       },
     },
@@ -40,7 +40,7 @@ const cy = cytoscape({
         id: "ca",
         source: "c",
         target: "a",
-        label: "Edge CA",
+        label: "边 CA",
         weight: 3,
       },
     },
@@ -106,7 +106,7 @@ const cy = cytoscape({
     },
   ],
   layout: { name: "circle" },
-  // Interaction settings
+  // 交互设置
   minZoom: 0.1,
   maxZoom: 10,
   zoomingEnabled: true,
@@ -120,136 +120,136 @@ const cy = cytoscape({
   autolock: false,
   autoungrabify: false,
   autounselectify: false,
-  // Gesture settings
+  // 手势设置
   wheelSensitivity: 0.1,
   pixelRatio: "auto",
 });
 ```
 
-## Interaction Control
+## 交互控制
 
-### Basic Interactions
+### 基础交互
 
 ```javascript
-// Zoom control
+// 缩放控制
 function zoomControl() {
-  // Enable/disable zooming
+  // 启用/禁用缩放
   cy.zoomingEnabled(true);
   cy.userZoomingEnabled(true);
 
-  // Set zoom range
+  // 设置缩放范围
   cy.minZoom(0.1);
   cy.maxZoom(10);
 
-  // Set zoom level
+  // 设置缩放级别
   cy.zoom(2.0);
 
-  // Get current zoom level
+  // 获取当前缩放级别
   const currentZoom = cy.zoom();
 }
 
-// Pan control
+// 平移控制
 function panControl() {
-  // Enable/disable panning
+  // 启用/禁用平移
   cy.panningEnabled(true);
   cy.userPanningEnabled(true);
 
-  // Set pan position
+  // 设置平移位置
   cy.pan({ x: 100, y: 100 });
 
-  // Get current pan position
+  // 获取当前平移位置
   const currentPan = cy.pan();
 
-  // Relative panning
+  // 相对平移
   cy.panBy({ x: 50, y: 50 });
 }
 
-// Auto lock
+// 自动锁定
 function lockControl() {
-  // Lock all interactions
+  // 锁定所有交互
   cy.autolock(true);
 
-  // Lock node dragging
+  // 锁定节点拖动
   cy.autoungrabify(true);
 
-  // Lock selection
+  // 锁定选择
   cy.autounselectify(true);
 }
 ```
 
-### Selection Control
+### 选择控制
 
 ```javascript
-// Selection mode
+// 选择模式
 function selectionControl() {
-  // Set selection type
+  // 设置选择类型
   cy.selectionType("single"); // or "additive"
 
-  // Enable/disable box selection
+  // 启用/禁用框选
   cy.boxSelectionEnabled(true);
 
-  // Selection operations
+  // 选择操作
   cy.elements().select();
   cy.elements().unselect();
 
-  // Get selected elements
+  // 获取选中元素
   const selected = cy.$(":selected");
 
-  // Select specific elements
+  // 选择特定元素
   cy.$("#nodeId").select();
 
-  // Selection filter
+  // 选择过滤
   cy.$("node[weight > 70]").select();
 }
 
-// Drag control
+// 拖拽控制
 function dragControl() {
-  // Set draggable
+  // 设置可拖拽
   cy.nodes().grabifiable(true);
 
-  // Set selectable
+  // 设置可选择
   cy.nodes().selectifiable(true);
 
-  // Lock position
+  // 锁定位置
   cy.nodes().locked(true);
 
-  // Custom drag behavior
+  // 自定义拖拽行为
   cy.nodes().on("drag", function (evt) {
     const node = evt.target;
     const pos = node.position();
-    // Limit drag range
+    // 限制拖拽范围
     if (pos.x < 0) node.position({ x: 0, y: pos.y });
     if (pos.y < 0) node.position({ x: pos.x, y: 0 });
   });
 }
 ```
 
-## Event System
+## 事件系统
 
-### Event Types
+### 事件类型
 
 ```javascript
-// Element events
+// 元素事件
 function elementEvents() {
-  // Click event
+  // 点击事件
   cy.on("tap", "node", function (evt) {
     const node = evt.target;
-    const position = evt.position; // Relative to viewport
-    const renderedPosition = evt.renderedPosition; // Relative to screen
-    console.log("Click node:", node.id(), position, renderedPosition);
+    const position = evt.position; // 相对于视口
+    const renderedPosition = evt.renderedPosition; // 相对于屏幕
+    console.log("点击节点:", node.id(), position, renderedPosition);
   });
 
-  // Double click event
+  // 双击事件
   cy.on("dbltap", "node", function (evt) {
-    console.log("Double click node:", evt.target.id());
+    console.log("双击节点:", evt.target.id());
   });
 
-  // Right click event
+  // 右键事件
   cy.on("cxttap", "node", function (evt) {
-    console.log("Right click:", evt.target.id());
+    console.log("右键点击:", evt.target.id());
   });
 
-  // Mouse events
+  // 鼠标事件
   cy.on("mouseover", "node", function (evt) {
     evt.target.addClass("highlighted");
   });
@@ -258,84 +258,84 @@ function elementEvents() {
     evt.target.removeClass("highlighted");
   });
 
-  // Drag events
+  // 拖拽事件
   cy.on("dragstart", "node", function (evt) {
-    console.log("Start dragging:", evt.target.id());
+    console.log("开始拖拽:", evt.target.id());
   });
 
   cy.on("drag", "node", function (evt) {
-    console.log("Dragging:", evt.target.position());
+    console.log("拖拽中:", evt.target.position());
   });
 
   cy.on("dragfree", "node", function (evt) {
-    console.log("End dragging:", evt.target.position());
+    console.log("拖拽结束:", evt.target.position());
   });
 }
 
-// View events
+// 视图事件
 function viewEvents() {
-  // Zoom event
+  // 缩放事件
   cy.on("zoom", function (evt) {
-    console.log("Zoom level:", cy.zoom());
+    console.log("缩放级别:", cy.zoom());
   });
 
-  // Pan event
+  // 平移事件
   cy.on("pan", function (evt) {
-    console.log("Pan position:", cy.pan());
+    console.log("平移位置:", cy.pan());
   });
 
-  // Viewport adjustment
+  // 视口调整
   cy.on("viewport", function (evt) {
-    console.log("Viewport change:", {
+    console.log("视口变化:", {
       zoom: cy.zoom(),
       pan: cy.pan(),
     });
   });
 }
 
-// Layout events
+// 布局事件
 function layoutEvents() {
   cy.on("layoutstart", function (evt) {
-    console.log("Layout start");
+    console.log("布局开始");
   });
 
   cy.on("layoutready", function (evt) {
-    console.log("Layout ready");
+    console.log("布局就绪");
   });
 
   cy.on("layoutstop", function (evt) {
-    console.log("Layout complete");
+    console.log("布局完成");
   });
 }
 ```
 
-### Event Handling
+### 事件处理
 
 ```javascript
-// Event delegation
+// 事件委托
 function eventDelegation() {
-  // Use selector delegation
+  // 使用选择器委托
   cy.on("tap", "node[weight > 70]", function (evt) {
-    console.log("Click large node:", evt.target.id());
+    console.log("点击大节点:", evt.target.id());
   });
 
-  // Namespace
+  // 命名空间
   cy.on("tap.namespace", "node", function (evt) {
-    console.log("Namespace event");
+    console.log("命名空间事件");
   });
 
-  // Remove specific namespace events
+  // 移除特定命名空间的事件
   cy.off("tap.namespace");
 }
 
-// Event data
+// 事件数据
 function eventData() {
-  // Pass data
+  // 传递数据
   cy.on("tap", "node", { customData: "value" }, function (evt) {
-    console.log("Custom data:", evt.data.customData);
+    console.log("自定义数据:", evt.data.customData);
   });
 
-  // Event object properties
+  // 事件对象属性
   cy.on("tap", "node", function (evt) {
     console.log({
       type: evt.type,
@@ -349,41 +349,41 @@ function eventData() {
 }
 ```
 
-### Gesture Recognition
+### 手势识别
 
 ```javascript
-// Custom gestures
+// 自定义手势
 function gestureRecognition() {
   let startPosition;
   let gestureTimeout;
 
-  // Start gesture
+  // 开始手势
   cy.on("tapstart", "node", function (evt) {
     startPosition = evt.position;
     gestureTimeout = setTimeout(() => {
       if (startPosition) {
-        console.log("Long press gesture");
+        console.log("长按手势");
       }
     }, 1000);
   });
 
-  // Move gesture
+  // 移动手势
   cy.on("tapdrag", "node", function (evt) {
     if (startPosition) {
       const currentPosition = evt.position;
       const dx = currentPosition.x - startPosition.x;
       const dy = currentPosition.y - startPosition.y;
 
-      // Determine gesture direction
+      // 判断手势方向
       if (Math.abs(dx) > Math.abs(dy)) {
-        console.log("Horizontal swipe");
+        console.log("水平滑动");
       } else {
-        console.log("Vertical swipe");
+        console.log("垂直滑动");
       }
     }
   });
 
-  // End gesture
+  // 结束手势
   cy.on("tapend", "node", function () {
     clearTimeout(gestureTimeout);
     startPosition = null;
@@ -391,79 +391,79 @@ function gestureRecognition() {
 }
 ```
 
-## Key Concepts Explanation
+## 关键概念说明
 
-1. **Interaction Configuration**
+1. **交互配置**
 
-   - **Zoom Settings**
+   - **缩放设置**
 
-     - `minZoom`, `maxZoom`: Zoom range
-     - `zoomingEnabled`: Whether to allow zooming
-     - `wheelSensitivity`: Wheel sensitivity
+     - `minZoom`, `maxZoom`: 缩放范围
+     - `zoomingEnabled`: 是否允许缩放
+     - `wheelSensitivity`: 滚轮灵敏度
 
-   - **Pan Settings**
+   - **平移设置**
 
-     - `panningEnabled`: Whether to allow panning
-     - `userPanningEnabled`: Whether to allow user panning
-     - `boxSelectionEnabled`: Whether to allow box selection
+     - `panningEnabled`: 是否允许平移
+     - `userPanningEnabled`: 是否允许用户平移
+     - `boxSelectionEnabled`: 是否允许框选
 
-   - **Selection Settings**
-     - `selectionType`: Selection mode
-     - `autoungrabify`: Disable dragging
-     - `autounselectify`: Disable selection
+   - **选择设置**
+     - `selectionType`: 选择模式
+     - `autoungrabify`: 禁止拖拽
+     - `autounselectify`: 禁止选择
 
-2. **Event System**
+2. **事件系统**
 
-   - **Event Types**
+   - **事件类型**
 
-     - Element events: tap, dbltap, mouseover, mouseout
-     - View events: zoom, pan, viewport
-     - Layout events: layoutstart, layoutready, layoutstop
+     - 元素事件: tap, dbltap, mouseover, mouseout
+     - 视图事件: zoom, pan, viewport
+     - 布局事件: layoutstart, layoutready, layoutstop
 
-   - **Event Properties**
+   - **事件属性**
 
-     - `type`: Event type
-     - `target`: Target element
-     - `position`: Event position
-     - `timeStamp`: Timestamp
+     - `type`: 事件类型
+     - `target`: 目标元素
+     - `position`: 事件位置
+     - `timeStamp`: 时间戳
 
-   - **Event Handling**
-     - Event delegation
-     - Namespace
-     - Event data passing
+   - **事件处理**
+     - 事件委托
+     - 命名空间
+     - 事件数据传递
 
-3. **Gesture System**
+3. **手势系统**
 
-   - **Basic Gestures**
+   - **基础手势**
 
-     - Tap (tap)
-     - Double tap (dbltap)
-     - Long press (taphold)
-     - Swipe (swipe)
+     - 点击 (tap)
+     - 双击 (dbltap)
+     - 长按 (taphold)
+     - 滑动 (swipe)
 
-   - **Compound Gestures**
+   - **复合手势**
 
-     - Pinch zoom
-     - Rotate
-     - Multi-touch
+     - 捏合缩放
+     - 旋转
+     - 多点触控
 
-   - **Gesture Configuration**
+   - **手势配置**
      - `touchTapThreshold`
      - `desktopTapThreshold`
      - `tapHoldDuration`
 
-4. **Performance Optimization**
+4. **性能优化**
 
-   - Use event delegation
-   - Set reasonable event handlers
-   - Avoid frequent event handling
-   - Use throttling and debouncing
-   - Optimize gesture recognition
+   - 使用事件委托
+   - 合理设置事件处理器
+   - 避免频繁的事件处理
+   - 使用节流和防抖
+   - 优化手势识别
 
-## Example: Implementing Custom Interactions
+## 示例：实现自定义交互
 
 ```javascript
-// Double click node to expand/collapse
+// 双击节点展开/收起
 cy.on("dblclick", "node", function (evt) {
   const node = evt.target;
   const neighborhood = node.neighborhood();
@@ -475,5 +475,22 @@ cy.on("dblclick", "node", function (evt) {
     neighborhood.style("display", "element");
     node.data("expanded", true);
   }
+});
+
+// 悬停高亮邻居
+cy.on("mouseover", "node", function (evt) {
+  const node = evt.target;
+  const neighborhood = node.neighborhood();
+
+  neighborhood.addClass("highlighted");
+  node.addClass("highlighted");
+});
+
+cy.on("mouseout", "node", function (evt) {
+  const node = evt.target;
+  const neighborhood = node.neighborhood();
+
+  neighborhood.removeClass("highlighted");
+  node.removeClass("highlighted");
 });
 ```

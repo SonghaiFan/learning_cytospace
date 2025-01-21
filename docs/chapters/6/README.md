@@ -1,323 +1,550 @@
-# 6. 图算法与分析
+# 6. Graph Algorithms and Analysis
 
-> [示例代码](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code/6-图算法与分析) | [在线预览](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-图算法与分析/index.html)
+> [View Example Code](../examples/6-graph-algorithms-and-analysis/index.html) | [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/6-graph-algorithms-and-analysis/index.html)
 
-本章节将介绍如何在 Cytoscape.js 中使用和实现各种图算法，包括路径查找、连通性分析、中心性计算等。每个功能都将提供传统方式和 React 方式两种实现。
+This chapter will introduce how to use graph algorithms and analysis features in Cytoscape.js.
 
-## 核心概念
+## Basic Configuration
 
-### 图算法类型
-
-- **路径算法**: 最短路径、全源最短路径等
-- **中心性算法**: PageRank、度中心性、介数中心性等
-- **社区发现**: 聚类分析、模块度优化等
-- **连通性分析**: 桥接边、关节点检测等
-
-### 算法复杂度
-
-| 算法类型   | 时间复杂度     | 空间复杂度 |
-| ---------- | -------------- | ---------- |
-| 最短路径   | O((V+E)·log V) | O(V)       |
-| PageRank   | O(E·k)         | O(V)       |
-| 中介中心性 | O(V·E)         | O(V)       |
-| 度中心性   | O(V)           | O(1)       |
-| 桥接边检测 | O(V+E)         | O(V)       |
-| 社区发现   | O(V·k·i)       | O(V)       |
-
-## 传统方式实现
-
-### 1. 路径分析
+Initialize a graph instance with multiple community structures:
 
 ```javascript
-// 最短路径分析
-function findShortestPath(source, target) {
-  const dijkstra = cy.elements().dijkstra({
-    root: source,
-    directed: false,
-    weight: (edge) => edge.data("weight"),
-  });
-
-  const path = dijkstra.pathTo(target);
-  const distance = dijkstra.distanceTo(target);
-
-  return {
-    path,
-    distance,
-    nodes: path
-      .nodes()
-      .map((n) => n.data("label"))
-      .join(" → "),
-  };
-}
-
-// 使用示例
-const result = findShortestPath(cy.$("#a1"), cy.$("#b2"));
-console.log(`最短路径长度: ${result.distance}`);
-console.log(`经过节点: ${result.nodes}`);
+const cy = cytoscape({
+  container: document.getElementById("cy"),
+  elements: [
+    // Community A
+    { data: { id: "a1", label: "A1", weight: 65, community: "A" } },
+    { data: { id: "a2", label: "A2", weight: 70, community: "A" } },
+    { data: { id: "a3", label: "A3", weight: 75, community: "A" } },
+    // Community B
+    { data: { id: "b1", label: "B1", weight: 70, community: "B" } },
+    { data: { id: "b2", label: "B2", weight: 75, community: "B" } },
+    { data: { id: "b3", label: "B3", weight: 80, community: "B" } },
+    // Community C
+    { data: { id: "c1", label: "C1", weight: 75, community: "C" } },
+    { data: { id: "c2", label: "C2", weight: 80, community: "C" } },
+    { data: { id: "c3", label: "C3", weight: 85, community: "C" } },
+    // Edges within communities
+    { data: { id: "a1a2", source: "a1", target: "a2", weight: 1 } },
+    { data: { id: "a2a3", source: "a2", target: "a3", weight: 1 } },
+    { data: { id: "a3a1", source: "a3", target: "a1", weight: 1 } },
+    { data: { id: "b1b2", source: "b1", target: "b2", weight: 1 } },
+    { data: { id: "b2b3", source: "b2", target: "b3", weight: 1 } },
+    { data: { id: "b3b1", source: "b3", target: "b1", weight: 1 } },
+    { data: { id: "c1c2", source: "c1", target: "c2", weight: 1 } },
+    { data: { id: "c2c3", source: "c2", target: "c3", weight: 1 } },
+    { data: { id: "c3c1", source: "c3", target: "c1", weight: 1 } },
+    // Edges between communities
+    { data: { id: "a1b1", source: "a1", target: "b1", weight: 2 } },
+    { data: { id: "b2c2", source: "b2", target: "c2", weight: 2 } },
+    { data: { id: "c3a3", source: "c3", target: "a3", weight: 2 } },
+  ],
+  style: [
+    {
+      selector: "node",
+      style: {
+        "background-color": "#666",
+        label: "data(label)",
+        "text-valign": "center",
+        "text-halign": "center",
+        width: "data(weight)",
+        height: "data(weight)",
+      },
+    },
+    {
+      selector: "edge",
+      style: {
+        width: "data(weight)",
+        "line-color": "#999",
+        "curve-style": "bezier",
+        "target-arrow-shape": "triangle",
+      },
+    },
+    {
+      selector: ".highlighted",
+      style: {
+        "background-color": "#61bffc",
+        "line-color": "#61bffc",
+        "target-arrow-color": "#61bffc",
+        "transition-property":
+          "background-color, line-color, target-arrow-color",
+        "transition-duration": "0.5s",
+      },
+    },
+    {
+      selector: ".faded",
+      style: {
+        opacity: 0.25,
+        "text-opacity": 0.25,
+      },
+    },
+  ],
+  layout: { name: "circle" },
+});
 ```
 
-### 2. 中心性分析
+## Centrality Analysis
+
+### PageRank Analysis
 
 ```javascript
-// PageRank 分析
-function analyzePageRank() {
-  const ranks = cy.elements().pageRank();
-  const results = [];
+// Calculate PageRank
+function calculatePageRank() {
+  const pagerank = cy.elements().pageRank({
+    dampingFactor: 0.85, // Damping factor (default: 0.85)
+    precision: 0.000001, // Precision threshold (default: 0.000001)
+    iterations: 200, // Maximum iterations (default: 200)
+    weight: (edge) => edge.data("weight"), // Edge weight function
+  });
 
+  // Apply visual styles based on PageRank values
   cy.nodes().forEach((node) => {
-    const rank = ranks.rank(node);
-    results.push({
-      node: node.data("label"),
-      rank: rank.toFixed(3),
-    });
+    const rank = pagerank.rank(node);
+    node.data("pageRank", rank);
 
-    // 可视化：节点大小反映重要性
+    // Normalize size based on PageRank
+    const size = 30 + rank * 50;
     node.style({
-      width: 20 + rank * 200,
-      height: 20 + rank * 200,
+      width: size,
+      height: size,
+      "background-color": `rgb(${Math.round(rank * 255)}, 0, 0)`,
     });
   });
 
-  return results;
+  return pagerank;
 }
+```
 
-// 中介中心性分析
-function analyzeBetweenness() {
-  const bc = cy.elements().betweennessCentrality();
-  const results = [];
+### Degree Centrality Analysis
 
+```javascript
+// Calculate degree centrality
+function calculateDegreeCentrality() {
+  cy.nodes().forEach((node) => {
+    // Calculate different types of degree
+    const totalDegree = node.degree();
+    const inDegree = node.indegree();
+    const outDegree = node.outdegree();
+
+    // Store degree values
+    node.data({
+      totalDegree,
+      inDegree,
+      outDegree,
+    });
+
+    // Apply visual styles
+    const size = 30 + totalDegree * 10;
+    node.style({
+      width: size,
+      height: size,
+      "background-color": `rgb(0, ${Math.round((totalDegree / 6) * 255)}, 0)`,
+    });
+  });
+}
+```
+
+### Betweenness Centrality Analysis
+
+```javascript
+// Calculate betweenness centrality
+function calculateBetweennessCentrality() {
+  const bc = cy.elements().betweennessCentrality({
+    directed: true, // Consider edge direction
+    weight: (edge) => edge.data("weight"), // Edge weight function
+  });
+
+  // Apply visual styles based on betweenness values
   cy.nodes().forEach((node) => {
     const centrality = bc.betweenness(node);
-    results.push({
-      node: node.data("label"),
-      centrality: centrality.toFixed(3),
+    node.data("betweenness", centrality);
+
+    // Normalize size based on betweenness
+    const size = 30 + centrality * 20;
+    node.style({
+      width: size,
+      height: size,
+      "background-color": `rgb(0, 0, ${Math.round(centrality * 255)})`,
     });
   });
 
-  return results;
+  return bc;
 }
 ```
 
-### 3. 连通性分析
+## Path Analysis
+
+### Shortest Path Analysis
 
 ```javascript
-// 桥接边检测
-function detectBridges() {
-  const bridges = [];
-  cy.edges().forEach((edge) => {
-    const edgeData = edge.remove(); // 暂时移除边
-
-    if (cy.elements().components().length > 1) {
-      bridges.push(edge);
-    }
-
-    cy.add(edgeData); // 恢复边
+// Find shortest path between two nodes
+function findShortestPath(sourceId, targetId) {
+  const dijkstra = cy.elements().dijkstra({
+    root: `#${sourceId}`,
+    weight: (edge) => edge.data("weight"),
+    directed: true,
   });
 
-  return bridges;
-}
+  // Get path to target
+  const pathToTarget = dijkstra.pathTo(cy.$(`#${targetId}`));
 
-// 关节点检测
-function detectArticulationPoints() {
-  const points = [];
-  cy.nodes().forEach((node) => {
-    const nodeData = node.remove(); // 暂时移除节点
+  // Highlight path
+  cy.elements().removeClass("highlighted");
+  pathToTarget.forEach((ele) => ele.addClass("highlighted"));
 
-    if (cy.elements().components().length > 1) {
-      points.push(node);
-    }
+  // Calculate path statistics
+  const distance = dijkstra.distanceTo(cy.$(`#${targetId}`));
 
-    cy.add(nodeData); // 恢复节点
-  });
-
-  return points;
+  return {
+    path: pathToTarget,
+    distance: distance,
+  };
 }
 ```
 
-### 4. 社区发现
+### All Paths Analysis
 
 ```javascript
-// k-means 聚类
+// Find all paths between two nodes
+function findAllPaths(sourceId, targetId) {
+  const paths = [];
+  const visited = new Set();
+
+  function dfs(currentId, targetId, currentPath) {
+    if (currentId === targetId) {
+      paths.push([...currentPath]);
+      return;
+    }
+
+    visited.add(currentId);
+    const node = cy.$(`#${currentId}`);
+
+    node.outgoers("node").forEach((neighbor) => {
+      const neighborId = neighbor.id();
+      if (!visited.has(neighborId)) {
+        currentPath.push(neighborId);
+        dfs(neighborId, targetId, currentPath);
+        currentPath.pop();
+      }
+    });
+
+    visited.delete(currentId);
+  }
+
+  dfs(sourceId, targetId, [sourceId]);
+  return paths;
+}
+```
+
+## Community Analysis
+
+### K-means Clustering
+
+```javascript
+// Perform k-means clustering
 function kMeansClustering(k = 3) {
+  // Get node positions
   const positions = cy.nodes().map((node) => ({
     id: node.id(),
     x: node.position("x"),
     y: node.position("y"),
   }));
 
-  // 初始化中心点
-  let centers = positions.slice(0, k).map((p) => ({ x: p.x, y: p.y }));
-  let clusters = {};
+  // Initialize centroids randomly
+  let centroids = Array.from({ length: k }, () => ({
+    x: Math.random() * cy.width(),
+    y: Math.random() * cy.height(),
+  }));
 
-  // 迭代优化
-  for (let i = 0; i < 10; i++) {
-    clusters = assignToClusters(positions, centers);
-    centers = updateCenters(clusters, positions);
+  // Maximum iterations
+  const maxIterations = 100;
+  let iteration = 0;
+  let changed = true;
+
+  while (changed && iteration < maxIterations) {
+    changed = false;
+    iteration++;
+
+    // Assign nodes to nearest centroid
+    const clusters = Array.from({ length: k }, () => []);
+    positions.forEach((pos) => {
+      let minDist = Infinity;
+      let clusterIndex = 0;
+
+      centroids.forEach((centroid, index) => {
+        const dist = Math.sqrt(
+          Math.pow(pos.x - centroid.x, 2) + Math.pow(pos.y - centroid.y, 2)
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          clusterIndex = index;
+        }
+      });
+
+      clusters[clusterIndex].push(pos);
+    });
+
+    // Update centroids
+    const newCentroids = clusters.map((cluster) => {
+      if (cluster.length === 0) return centroids[0];
+      return {
+        x: cluster.reduce((sum, pos) => sum + pos.x, 0) / cluster.length,
+        y: cluster.reduce((sum, pos) => sum + pos.y, 0) / cluster.length,
+      };
+    });
+
+    // Check if centroids changed
+    centroids.forEach((centroid, i) => {
+      if (
+        Math.abs(centroid.x - newCentroids[i].x) > 0.1 ||
+        Math.abs(centroid.y - newCentroids[i].y) > 0.1
+      ) {
+        changed = true;
+      }
+    });
+
+    centroids = newCentroids;
   }
 
-  return clusters;
-}
+  // Apply visual styles based on clusters
+  positions.forEach((pos) => {
+    const node = cy.$(`#${pos.id}`);
+    let minDist = Infinity;
+    let clusterIndex = 0;
 
-// 可视化聚类结果
-function visualizeClusters(clusters) {
-  Object.entries(clusters).forEach(([clusterId, nodes]) => {
-    nodes.forEach((nodeId) => {
-      cy.$id(nodeId).addClass(`cluster-${clusterId}`);
+    centroids.forEach((centroid, index) => {
+      const dist = Math.sqrt(
+        Math.pow(pos.x - centroid.x, 2) + Math.pow(pos.y - centroid.y, 2)
+      );
+      if (dist < minDist) {
+        minDist = dist;
+        clusterIndex = index;
+      }
     });
+
+    // Color nodes based on cluster
+    const hue = (360 * clusterIndex) / k;
+    node.style("background-color", `hsl(${hue}, 75%, 50%)`);
   });
 }
 ```
 
-## React 方式实现
+## Network Structure Analysis
 
-### 1. 图算法组件
+### Bridge Edge Detection
 
-```typescript
-interface GraphAlgorithmProps {
-  cy: cytoscape.Core;
-  onResult?: (result: any) => void;
-}
+```javascript
+// Find bridge edges
+function findBridges() {
+  const bridges = [];
+  const visited = new Set();
+  const disc = new Map();
+  const low = new Map();
+  let time = 0;
 
-// 最短路径组件
-export function ShortestPath({ cy, onResult }: GraphAlgorithmProps) {
-  const findPath = useCallback(
-    (source: string, target: string) => {
-      const path = cy.elements().dijkstra({
-        root: `#${source}`,
-        directed: false,
-      });
+  function dfs(node, parent) {
+    visited.add(node.id());
+    disc.set(node.id(), time);
+    low.set(node.id(), time);
+    time++;
 
-      const result = {
-        path: path.pathTo(`#${target}`),
-        distance: path.distanceTo(`#${target}`),
-      };
+    node.neighborhood("node").forEach((neighbor) => {
+      if (!visited.has(neighbor.id())) {
+        const edge = node.edgesWith(neighbor);
+        dfs(neighbor, node);
 
-      onResult?.(result);
-    },
-    [cy, onResult]
-  );
+        low.set(
+          node.id(),
+          Math.min(low.get(node.id()), low.get(neighbor.id()))
+        );
 
-  return (
-    <div className="algorithm-controls">
-      <select onChange={(e) => setSource(e.target.value)}>
-        {cy.nodes().map((node) => (
-          <option key={node.id()} value={node.id()}>
-            {node.data("label")}
-          </option>
-        ))}
-      </select>
-      {/* 其他控制UI */}
-    </div>
-  );
-}
+        if (low.get(neighbor.id()) > disc.get(node.id())) {
+          bridges.push(edge);
+        }
+      } else if (neighbor.id() !== parent?.id()) {
+        low.set(
+          node.id(),
+          Math.min(low.get(node.id()), disc.get(neighbor.id()))
+        );
+      }
+    });
+  }
 
-// 中心性分析组件
-export function CentralityAnalysis({ cy, onResult }: GraphAlgorithmProps) {
-  const analyzeCentrality = useCallback(
-    (type: "pagerank" | "betweenness") => {
-      const result =
-        type === "pagerank"
-          ? cy.elements().pageRank()
-          : cy.elements().betweennessCentrality();
+  // Start DFS from each unvisited node
+  cy.nodes().forEach((node) => {
+    if (!visited.has(node.id())) {
+      dfs(node);
+    }
+  });
 
-      onResult?.(result);
-    },
-    [cy, onResult]
-  );
+  // Highlight bridge edges
+  cy.edges().removeClass("highlighted");
+  bridges.forEach((edge) => {
+    edge.addClass("highlighted");
+  });
 
-  return (
-    <div className="algorithm-controls">
-      <button onClick={() => analyzeCentrality("pagerank")}>
-        PageRank 分析
-      </button>
-      <button onClick={() => analyzeCentrality("betweenness")}>
-        中介中心性分析
-      </button>
-    </div>
-  );
+  return bridges;
 }
 ```
 
-### 2. 使用示例
+### Articulation Point Detection
 
-```typescript
-export default function GraphAnalysis() {
-  const [results, setResults] = useState<any>(null);
+```javascript
+// Find articulation points
+function findArticulationPoints() {
+  const articulationPoints = new Set();
+  const visited = new Set();
+  const disc = new Map();
+  const low = new Map();
+  const parent = new Map();
+  let time = 0;
 
-  return (
-    <div className="graph-analysis">
-      <CytoscapeGraph
-        elements={graphData}
-        style={graphStyle}
-        onReady={(cy) => {
-          // 算法组件
-          return (
-            <>
-              <ShortestPath cy={cy} onResult={setResults} />
-              <CentralityAnalysis cy={cy} onResult={setResults} />
-              {/* 结果展示 */}
-              {results && (
-                <div className="results">{/* 格式化并展示结果 */}</div>
-              )}
-            </>
-          );
-        }}
-      />
-    </div>
-  );
+  function dfs(node) {
+    let children = 0;
+    visited.add(node.id());
+    disc.set(node.id(), time);
+    low.set(node.id(), time);
+    time++;
+
+    node.neighborhood("node").forEach((neighbor) => {
+      if (!visited.has(neighbor.id())) {
+        children++;
+        parent.set(neighbor.id(), node.id());
+        dfs(neighbor);
+
+        low.set(
+          node.id(),
+          Math.min(low.get(node.id()), low.get(neighbor.id()))
+        );
+
+        // Root with at least two children
+        if (!parent.has(node.id()) && children > 1) {
+          articulationPoints.add(node.id());
+        }
+
+        // Non-root node with low value of child >= discovery value
+        if (
+          parent.has(node.id()) &&
+          low.get(neighbor.id()) >= disc.get(node.id())
+        ) {
+          articulationPoints.add(node.id());
+        }
+      } else if (neighbor.id() !== parent.get(node.id())) {
+        low.set(
+          node.id(),
+          Math.min(low.get(node.id()), disc.get(neighbor.id()))
+        );
+      }
+    });
+  }
+
+  // Start DFS from each unvisited node
+  cy.nodes().forEach((node) => {
+    if (!visited.has(node.id())) {
+      dfs(node);
+    }
+  });
+
+  // Highlight articulation points
+  cy.nodes().removeClass("highlighted");
+  articulationPoints.forEach((nodeId) => {
+    cy.$(`#${nodeId}`).addClass("highlighted");
+  });
+
+  return Array.from(articulationPoints);
 }
 ```
 
-## 最佳实践
+## Key Concepts Explanation
 
-### 1. 性能优化
+1. **Centrality Measures**
 
-- **算法选择**
+   - **PageRank**
 
-  - 根据图的规模选择合适的算法
-  - 考虑时间和空间复杂度的平衡
-  - 对大规模图采用近似算法
+     - Evaluates node importance based on connections
+     - Complexity: O(E·k), where k is iterations
+     - Applications: Node ranking, influence analysis
 
-- **计算优化**
-  - 使用缓存避免重复计算
-  - 采用增量计算方式
-  - 利用 Web Worker 处理耗时操作
+   - **Degree Centrality**
 
-### 2. 可视化反馈
+     - Reflects direct connection count
+     - Complexity: O(V)
+     - Applications: Hub detection, connectivity analysis
 
-- **交互设计**
+   - **Betweenness Centrality**
+     - Measures node importance as intermediary
+     - Complexity: O(V·E)
+     - Applications: Network flow, bottleneck detection
 
-  - 提供算法执行进度反馈
-  - 使用动画展示算法步骤
-  - 支持暂停和继续操作
+2. **Path Analysis**
 
-- **结果展示**
-  - 高亮显示关键节点和路径
-  - 使用合适的视觉编码
-  - 提供详细的结果解释
+   - **Shortest Path**
 
-### 3. 代码组织
+     - Dijkstra's algorithm for weighted graphs
+     - Complexity: O((V+E)·log V)
+     - Applications: Route planning, distance analysis
 
-- **模块化设计**
+   - **All Paths**
+     - DFS-based path enumeration
+     - Complexity: O(V!)
+     - Applications: Route alternatives, redundancy analysis
 
-  - 算法逻辑与视图逻辑分离
-  - 使用 TypeScript 类型保证代码安全
-  - 实现通用的算法接口
+3. **Community Analysis**
 
-- **错误处理**
-  - 合理处理边界情况
-  - 提供清晰的错误信息
-  - 支持优雅降级
+   - **K-means Clustering**
+     - Position-based node grouping
+     - Complexity: O(k·n·i), where i is iterations
+     - Applications: Community detection, node classification
 
-### 4. 扩展性考虑
+4. **Network Structure**
 
-- **算法扩展**
+   - **Bridge Edges**
 
-  - 支持自定义算法插件
-  - 提供算法组合机制
-  - 实现算法参数配置
+     - Critical connections between components
+     - Complexity: O(V+E)
+     - Applications: Network vulnerability, connection importance
 
-- **数据处理**
-  - 支持多种数据格式
-  - 提供数据预处理接口
-  - 实现结果导出功能
+   - **Articulation Points**
+     - Critical nodes for connectivity
+     - Complexity: O(V+E)
+     - Applications: Network resilience, failure points
+
+5. **Performance Optimization**
+
+   - Use appropriate algorithms based on graph size
+   - Cache computation results
+   - Implement batch processing for large graphs
+   - Consider memory usage for large datasets
+   - Use efficient data structures
+
+## Example: Network Analysis Dashboard
+
+```javascript
+// Create analysis dashboard
+function createAnalysisDashboard() {
+  // Calculate and display centrality measures
+  const pagerank = calculatePageRank();
+  const betweenness = calculateBetweennessCentrality();
+  calculateDegreeCentrality();
+
+  // Find critical network elements
+  const bridges = findBridges();
+  const articulationPoints = findArticulationPoints();
+
+  // Perform community detection
+  kMeansClustering(3);
+
+  // Display analysis results
+  console.log({
+    centrality: {
+      pagerank: pagerank.rank(cy.nodes()[0]),
+      betweenness: betweenness.betweenness(cy.nodes()[0]),
+      degree: cy.nodes()[0].data("totalDegree"),
+    },
+    structure: {
+      bridges: bridges.length,
+      articulationPoints: articulationPoints.length,
+    },
+  });
+}
+```

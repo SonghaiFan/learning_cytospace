@@ -1,27 +1,34 @@
-# Cytoscape.js 学习指南
+# Cytoscape.js Guide
 
-> 一个全面的 Cytoscape.js 中文教程，帮助你掌握图可视化开发。
+Welcome to the Cytoscape.js Guide! This comprehensive tutorial will help you master Cytoscape.js, a powerful graph visualization library.
 
-## 课程概述
+## What You'll Learn
 
-本教程涵盖了使用 Cytoscape.js 进行图可视化开发的全过程，从基础环境搭建到高级特性应用。
+- Setting up your development environment
+- Basic node and edge operations
+- Layout and view control
+- Styling and visual effects
+- Interaction and event handling
+- Animation and transitions
+- Data import and export
 
-## 课程内容
+## Getting Started
 
-- 环境搭建与初始化
-- 基础图形操作
-- 样式与布局控制
-- 交互与事件处理
-- 高级特性应用
-- 实用工具与扩展
+Navigate through the chapters using the sidebar. Each chapter includes:
 
-## 特点
+- Detailed explanations
+- Code examples
+- Interactive demonstrations
+- Best practices
 
-- 循序渐进的学习路径
-- 丰富的实例代码
-- 中文详细讲解
-- 实用性强的案例
+## Prerequisites
 
-## 开始学习
+- Basic knowledge of JavaScript
+- Understanding of HTML and CSS
+- Familiarity with web development concepts
 
-点击左侧目录开始你的 Cytoscape.js 学习之旅！
+## Resources
+
+- [Cytoscape.js Official Documentation](https://js.cytoscape.org)
+- [GitHub Repository](https://github.com/songhaifan/learning_cytospace)
+- [Live Examples](examples/)
