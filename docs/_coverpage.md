@@ -7,5 +7,5 @@
 - 🔍 Detailed Implementation Guide
 - 🚀 Rich Practical Cases
 
-[Get Started](/en/README.md)
+[Get Started](/README.md)
 [Example Code](https://github.com/SonghaiFan/learning_cytospace/tree/main/cytoscape_learning_code)
