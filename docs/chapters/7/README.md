@@ -1,6 +1,6 @@
 # 7. Data Import and Export
 
-> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-data-import-export/index.html)
+> [Online Preview](https://raw.githack.com/SonghaiFan/learning_cytospace/main/cytoscape_learning_code/7-data-import-and-export/index.html)
 
 This chapter will introduce how to implement data import and export functionality in Cytoscape.js.
 
